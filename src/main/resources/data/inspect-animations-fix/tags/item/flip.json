@@ -1,0 +1,11 @@
+{
+  "replace": false,
+  "values": [
+    "#minecraft:enchantable/mining",
+    "#minecraft:spears",
+    "minecraft:bow",
+    "minecraft:crossbow",
+    "minecraft:mace",
+    "minecraft:trident"
+  ]
+}

@@ -1,0 +1,53 @@
+# Inspect Animations Fix
+
+English | [Русский](README.ru.md)
+
+A client-side Fabric mod for Minecraft 26.3 that expands [Inspect Animations](https://modrinth.com/mod/inspect-animations) with **idle auto-animations**: if you do nothing for a configurable amount of time, the mod automatically plays one of the Inspect Animations actions at random - either the currently selected animation (the same thing that happens when you press **R**) or the **Turn** animation.
+
+Inactivity is reset by any of the following player actions:
+
+- Using an item (**left click** or **right click**)
+- Switching items (**hotbar keys 1-9**, **mouse wheel**, **offhand swap** with F)
+
+Everything is configurable from the Mod Menu config screen: the feature can be toggled and the idle timeout can be changed (1-180 seconds). The setting is stored in `config/inspect-animations-fix.json`.
+
+## Requirements
+
+- [Inspect Animations](https://modrinth.com/mod/inspect-animations) by **[SoundsoftheSun](https://codeberg.org/SoundsoftheSun/inspect-animations)** - this mod integrates with it by replaying its keybind actions. Without it, idle animations are silently disabled.
+- [Mod Menu](https://modrinth.com/mod/modmenu) by **TerraformersMC** (optional) - used only to expose the config screen.
+
+This mod integrates with Inspect Animations via a fail-safe runtime probe: if the version installed does not provide the expected methods, the mod disables itself and logs a warning instead of crashing.
+
+## Item tags
+
+The mod also ships four item tags - one per Inspect Animations animation - so items can be assigned an animation by simply tagging them:
+
+| Tag | Animation |
+| --- | --- |
+| `inspect-animations-fix:turn` | Turn |
+| `inspect-animations-fix:toss` | Toss |
+| `inspect-animations-fix:flip` | Flip |
+| `inspect-animations-fix:flourish` | Flourish |
+
+To use them, open the Inspect Animations config (**Animations for specific items**) and add the tag for the animation you want, prefixed with `#`:
+
+- Turn: `#inspect-animations-fix:turn`
+- Toss: `#inspect-animations-fix:toss`
+- Flip: `#inspect-animations-fix:flip`
+- Flourish: `#inspect-animations-fix:flourish`
+
+Every item you add to a tag file plays that animation when inspected - including the idle auto-animations triggered by this mod. Tag files can contain plain item IDs (`minecraft:diamond_sword`) or references to other tags prefixed with `#` (for example `#minecraft:swords`).
+
+## Building
+
+Requires a Java 25 JDK:
+
+```sh
+./gradlew build
+```
+
+The built jar is placed in `build/libs/`.
+
+## License
+
+Distributed under the [MIT License](LICENSE).

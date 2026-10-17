@@ -1,0 +1,45 @@
+{
+	"schemaVersion": 1,
+	"id": "inspect-animations-fix",
+	"version": "${version}",
+	"name": "Inspect Animations Fix",
+	"description": "Expands Inspect Animations with idle auto-inspections: a configurable inaction timeout triggers the selected or Turn animation. Also ships item tags (turn, toss, flip, flourish) for per-animation item tagging.",
+	"authors": [
+		"a-karetka"
+	],
+	"contact": {
+		"sources": "https://github.com/a-karetka/inspect-animations-fix"
+	},
+	"license": "MIT",
+	"icon": "assets/inspect-animations-fix/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"main": [
+			"com.github.akaretka.InspectAnimationsFix"
+		],
+		"client": [
+			"com.github.akaretka.client.InspectAnimationsFixClient"
+		],
+		"modmenu": [
+			"com.github.akaretka.client.ModMenuIntegration"
+		]
+	},
+	"mixins": [
+		{
+			"config": "inspect-animations-fix.client.mixins.json",
+			"environment": "client"
+		}
+	],
+	"depends": {
+		"fabricloader": ">=0.19.5",
+		"minecraft": "~26.3",
+		"java": ">=25",
+		"fabric-api": "*"
+	},
+	"recommends": {
+		"inspectanimations": "*"
+	},
+	"suggests": {
+		"modmenu": "*"
+	}
+}

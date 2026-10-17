@@ -1,0 +1,9 @@
+{
+	"inspect-animations-fix.idlefix.title": "Inspect Animations Fix",
+	"inspect-animations-fix.idlefix.enabled": "Авто-анимации",
+	"inspect-animations-fix.idlefix.idle_seconds": "Время бездействия: %s сек",
+	"inspect-animations-fix.idlefix.on": "ВКЛ",
+	"inspect-animations-fix.idlefix.off": "ВЫКЛ",
+	"modmenu.summaryTranslation.inspect-animations-fix": "Авто-осмотр при бездействии для Inspect Animations.",
+	"modmenu.descriptionTranslation.inspect-animations-fix": "Расширяет Inspect Animations авто-анимациями при бездействии: после настраиваемого таймаута бездействия срабатывает случайное действие - либо текущая выбранная анимация, либо анимация вращения. Бездействие сбрасывается использованием предметов и сменой предметов. Мод также добавляет четыре тега предметов для тегирования предметов в настройках анимаций Inspect Animations. Требуется мод Inspect Animations от SoundsoftheSun."
+}
