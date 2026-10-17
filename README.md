@@ -13,7 +13,7 @@ Everything is configurable from the Mod Menu config screen: the feature can be t
 
 ## Requirements
 
-- [Inspect Animations](https://modrinth.com/mod/inspect-animations) by **[SoundsoftheSun](https://codeberg.org/SoundsoftheSun/inspect-animations)** - this mod integrates with it by replaying its keybind actions. Without it, idle animations are silently disabled.
+- [Inspect Animations](https://modrinth.com/mod/inspect-animations) by **[SoundsoftheSun](https://codeberg.org/SoundsoftheSun/inspect-animations)** - this mod integrates with it by replaying its keybind actions. Without it, idle animations are silently disabled. Supported versions: **0.2.5 and any later 0.2.x** (`^0.2.5`); other versions disable the idle feature with a logged warning.
 - [Mod Menu](https://modrinth.com/mod/modmenu) by **TerraformersMC** (optional) - used only to expose the config screen.
 
 This mod integrates with Inspect Animations via a fail-safe runtime probe: if the version installed does not provide the expected methods, the mod disables itself and logs a warning instead of crashing.

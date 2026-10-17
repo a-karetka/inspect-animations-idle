@@ -8,7 +8,16 @@
 		"a-karetka"
 	],
 	"contact": {
+		"homepage": "https://github.com/a-karetka/inspect-animations-fix",
+		"issues": "https://github.com/a-karetka/inspect-animations-fix/issues",
 		"sources": "https://github.com/a-karetka/inspect-animations-fix"
+	},
+	"custom": {
+		"modmenu": {
+			"links": {
+				"inspect-animations-fix.telegram": "https://t.me/karetkaclub"
+			}
+		}
 	},
 	"license": "MIT",
 	"icon": "assets/inspect-animations-fix/icon.png",
@@ -37,7 +46,7 @@
 		"fabric-api": "*"
 	},
 	"recommends": {
-		"inspectanimations": "*"
+		"inspectanimations": "^0.2.5"
 	},
 	"suggests": {
 		"modmenu": "*"

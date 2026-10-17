@@ -5,5 +5,6 @@
 	"inspect-animations-fix.idlefix.on": "ON",
 	"inspect-animations-fix.idlefix.off": "OFF",
 	"modmenu.summaryTranslation.inspect-animations-fix": "Idle auto-inspections for Inspect Animations.",
-	"modmenu.descriptionTranslation.inspect-animations-fix": "Expands Inspect Animations with idle auto-animations: after a configurable inaction timeout, a random action plays - either the currently selected animation or the Turn animation. Inactivity is reset by using items and switching items. The mod also ships four item tags for tagging items in the Inspect Animations per-item animation settings. Requires the Inspect Animations mod by SoundsoftheSun."
+	"modmenu.descriptionTranslation.inspect-animations-fix": "Expands Inspect Animations with idle auto-animations: after a configurable inaction timeout, a random action plays - either the currently selected animation or the Turn animation. Inactivity is reset by using items and switching items. The mod also ships four item tags for tagging items in the Inspect Animations per-item animation settings. Requires the Inspect Animations mod by SoundsoftheSun (supported: 0.2.5 to 0.2.x).",
+	"inspect-animations-fix.telegram": "Telegram"
 }

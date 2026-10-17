@@ -26,6 +26,14 @@ public final class IdleInspector {
 	/** Integration target; resolved through reflection because the class is private to the other mod. */
 	private static final String ANIMATION_HELPER_CLASS = "net.soundsofthesun.inspectanimations.client.AnimationHelper";
 	private static final String TURN_ANIMATION_NAME = "TURN";
+	/**
+	 * Supported Inspect Animations window, mirroring the {@code ^0.2.5} range in fabric.mod.json:
+	 * 0.2.5 and any later 0.2.x patch; other majors/minors are rejected before the probe runs.
+	 */
+	private static final int SUPPORTED_MAJOR = 0;
+	private static final int SUPPORTED_MINOR = 2;
+	private static final int SUPPORTED_MIN_PATCH = 5;
+	private static final String SUPPORTED_VERSION_RANGE = ">=0.2.5, <0.3.0";
 
 	/** Idle counter in client ticks; the timer restarts after every auto-trigger. */
 	private static int idleTicks;
@@ -106,6 +114,7 @@ public final class IdleInspector {
 			disable("Inspect Animations is not installed", null);
 			return;
 		}
+		if (!verifyVersion()) return;
 		Class<?> helper;
 		try {
 			helper = Class.forName(ANIMATION_HELPER_CLASS);
@@ -144,6 +153,50 @@ public final class IdleInspector {
 		if (sendSelectedAnimation == null && sendTurnAnimation == null) {
 			disable("no compatible Inspect Animations methods found", null);
 		}
+	}
+
+	/**
+	 * One-shot version gate, run before the reflection probe.
+	 *
+	 * <p>Parses the first three numeric components of the installed version (suffixes like
+	 * {@code 0.2.5+26.3} or {@code v0.2.5-beta.1} all reduce cleanly) and rejects anything outside
+	 * the supported window. An unparseable version never disables the feature on its own - the
+	 * signature probe below still gets a chance and the note is logged instead.
+	 *
+	 * @return {@code true} to proceed with the probe
+	 */
+	private static boolean verifyVersion() {
+		String version = FabricLoader.getInstance().getModContainer(INSPECT_MOD_ID)
+				.map(container -> container.getMetadata().getVersion().getFriendlyString())
+				.orElse("");
+		int[] parts = parseVersion(version);
+		if (parts == null) {
+			InspectAnimationsFix.LOGGER.warn("[idle] Inspect Animations version '{}' could not be parsed, skipping version check", version);
+			return true;
+		}
+		if (parts[0] == SUPPORTED_MAJOR && parts[1] == SUPPORTED_MINOR && parts[2] >= SUPPORTED_MIN_PATCH) {
+			InspectAnimationsFix.LOGGER.info("[idle] Inspect Animations {} detected, idle actions available", version);
+			return true;
+		}
+		disable("unsupported Inspect Animations version " + version + " (supported: " + SUPPORTED_VERSION_RANGE + ")", null);
+		return false;
+	}
+
+	/** First three numeric groups of a version string, or {@code null} if fewer than two can be read. */
+	private static int[] parseVersion(String version) {
+		if (version.isEmpty()) return null;
+		int[] parts = new int[3];
+		int index = 0;
+		try {
+			for (String token : version.split("\\D+")) {
+				if (token.isEmpty()) continue;
+				parts[index++] = Integer.parseInt(token);
+				if (index == 3) return parts;
+			}
+		} catch (NumberFormatException e) {
+			return null;
+		}
+		return index >= 2 ? parts : null;
 	}
 
 	/** Permanent fail-safe: logs the reason once and stops all future triggers. */
