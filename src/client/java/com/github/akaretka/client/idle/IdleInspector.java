@@ -76,7 +76,7 @@ public final class IdleInspector {
 		// A key press leaves the mapping "down" only while the game is in-game (no screen open),
 		// so this produces no false activity from GUIs or the title screen.
 		if (minecraft.options.keySwapOffhand.isDown()) idleTicks = 0;
-		if (++idleTicks < IdleConfig.idleSeconds * 20) return;
+		if (++idleTicks < IdleConfig.intervalTicks) return;
 		// Reset first so a failing invocation below can never cause a cascade of triggers.
 		idleTicks = 0;
 		// Triggers are skipped in menus and while the game is paused; the counter itself

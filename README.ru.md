@@ -2,6 +2,8 @@
 
 [English](README.md) | Русский
 
+[![Build](https://github.com/a-karetka/inspect-animations-idle/actions/workflows/build.yml/badge.svg)](https://github.com/a-karetka/inspect-animations-idle/actions/workflows/build.yml)
+
 Клиентский мод для Fabric (Minecraft 26.3), расширяющий [Inspect Animations](https://modrinth.com/mod/inspect-animations) **авто-анимациями при бездействии**: если ничего не делать заданное время, мод сам проигрывает случайное из двух действий Inspect Animations - текущую выбранную анимацию (как при нажатии **R**) или анимацию **Turn**.
 
 Бездействие сбрасывается следующими действиями игрока:
@@ -13,7 +15,7 @@
 
 ### Требования
 
-- [Inspect Animations](https://modrinth.com/mod/inspect-animations) от **[SoundsoftheSun](https://codeberg.org/SoundsoftheSun/inspect-animations)** - мод подыгрывает его клавишам. Без него авто-анимации отключаются. Поддерживаемые версии: **0.2.5 и любые более поздние 0.2.x** (`^0.2.5`); на остальных версиях функция бездействия отключается с записью в лог.
+- [Inspect Animations](https://modrinth.com/mod/inspect-animations) от **[SoundsoftheSun](https://codeberg.org/SoundsoftheSun/inspect-animations)** - **обязательная зависимость**, мод не загрузится без него. Поддерживаемые версии: **0.2.5 и любые более поздние 0.2.x** (`^0.2.5`); при неподходящей версии игра не запустится с сообщением загрузчика о несовпадении.
 - [Mod Menu](https://modrinth.com/mod/modmenu) от **TerraformersMC** (опционально) - только для экрана настроек.
 
 Мод интегрируется с Inspect Animations через отказоустойчивый рантайм-зонд: если установленная версия не содержит ожидаемых методов, мод отключает сам себя с записью в лог, не падая.

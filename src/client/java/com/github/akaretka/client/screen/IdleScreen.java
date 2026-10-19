@@ -71,7 +71,7 @@ public final class IdleScreen extends Screen {
 		@Override
 		protected void applyValue() {
 			int seconds = (int) Math.round(MIN_SECONDS + (MAX_SECONDS - MIN_SECONDS) * value);
-			IdleConfig.idleSeconds = Math.clamp(seconds, MIN_SECONDS, MAX_SECONDS);
+			IdleConfig.apply(seconds);
 		}
 	}
 }

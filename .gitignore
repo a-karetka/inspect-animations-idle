@@ -38,3 +38,12 @@ hs_err_*.log
 replay_*.log
 *.hprof
 *.jfr
+
+# dev-only mod jars (see build.gradle: localRuntime + flatDir libs)
+libs/
+
+# loom older genSources output (safety)
+remappedSrc/
+
+# Windows
+Thumbs.db

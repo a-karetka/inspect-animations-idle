@@ -5,6 +5,8 @@ plugins {
 
 repositories {
 	maven { url 'https://maven.terraformersmc.com/releases/' }
+	// Uncomment for dev runs with a locally downloaded Inspect Animations jar:
+	// flatDir { dirs 'libs' }
 }
 
 loom {
@@ -26,8 +28,13 @@ dependencies {
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
-	// ModMenu (API-only at compile time; runtime is optional dependency resolved by Fabric loader)
-	implementation "com.terraformersmc:modmenu:${project.modmenu_version}"
+	// ModMenu (compile-only; loaded at runtime only when Mod Menu itself is installed)
+	compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+
+	// Inspect Animations is a hard dependency (fabric.mod.json depends), so dev runs need it too.
+	// Drop its jar (renamed, e.g. "inspectanimations-0.2.5.jar") into the "libs" folder,
+	// then uncomment the line below and the flatDir repository above:
+	// localRuntime "libs:inspectanimations:0.2.5"
 }
 
 processResources {

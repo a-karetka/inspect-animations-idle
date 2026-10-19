@@ -1,0 +1,58 @@
+# Builds the mod on pull requests, and on version tags (v*) builds and publishes
+# the jars as a GitHub Release. Version numbering: gradle.properties `version`
+# must match the pushed tag (without the "v" prefix) - the workflow enforces this.
+name: Build
+
+on:
+  push:
+    tags:
+      - 'v*'
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'
+
+      - name: Set up Gradle (with caching)
+        uses: gradle/actions/setup-gradle@v4
+
+      # Release tags must agree with the version in gradle.properties,
+      # otherwise the release would carry a jar versioned differently from its tag.
+      - name: Verify tag matches mod version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          VERSION="$(awk -F= '/^version=/{print $2}' gradle.properties)"
+          if [ "$TAG" != "$VERSION" ]; then
+            echo "Tag 'v$TAG' does not match 'version=$VERSION' in gradle.properties"
+            echo "Tip: bump the version, or move the tag, then push it again."
+            exit 1
+          fi
+
+      - name: Build
+        run: ./gradlew build --no-configuration-cache
+
+      # PR runs: expose the built jars as downloadable artifacts for review.
+      - name: Upload jars (pull requests)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v4
+        with:
+          name: jars
+          path: build/libs/*.jar
+          if-no-files-found: error
+
+      # Tag runs: attach the jars to the GitHub Release for this tag.
+      - name: Publish to GitHub Release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: build/libs/*.jar

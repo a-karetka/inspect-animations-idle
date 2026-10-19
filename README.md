@@ -2,6 +2,8 @@
 
 English | [Русский](README.ru.md)
 
+[![Build](https://github.com/a-karetka/inspect-animations-idle/actions/workflows/build.yml/badge.svg)](https://github.com/a-karetka/inspect-animations-idle/actions/workflows/build.yml)
+
 A client-side Fabric mod for Minecraft 26.3 that expands [Inspect Animations](https://modrinth.com/mod/inspect-animations) with **idle auto-animations**: if you do nothing for a configurable amount of time, the mod automatically plays one of the Inspect Animations actions at random - either the currently selected animation (the same thing that happens when you press **R**) or the **Turn** animation.
 
 Inactivity is reset by any of the following player actions:
@@ -13,7 +15,7 @@ Everything is configurable from the Mod Menu config screen: the feature can be t
 
 ## Requirements
 
-- [Inspect Animations](https://modrinth.com/mod/inspect-animations) by **[SoundsoftheSun](https://codeberg.org/SoundsoftheSun/inspect-animations)** - this mod integrates with it by replaying its keybind actions. Without it, idle animations are silently disabled. Supported versions: **0.2.5 and any later 0.2.x** (`^0.2.5`); other versions disable the idle feature with a logged warning.
+- [Inspect Animations](https://modrinth.com/mod/inspect-animations) by **[SoundsoftheSun](https://codeberg.org/SoundsoftheSun/inspect-animations)** - a **required dependency**, the mod will not load without it. Supported versions: **0.2.5 and any later 0.2.x** (`^0.2.5`); on an unsupported version the game refuses to start with a clear loader message about the version mismatch.
 - [Mod Menu](https://modrinth.com/mod/modmenu) by **TerraformersMC** (optional) - used only to expose the config screen.
 
 This mod integrates with Inspect Animations via a fail-safe runtime probe: if the version installed does not provide the expected methods, the mod disables itself and logs a warning instead of crashing.

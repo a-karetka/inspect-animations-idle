@@ -28,8 +28,13 @@ public final class IdleConfig {
 
 	/** Master switch; flips before the counter check in the tick path */
 	public static boolean enabled = true;
-	/** Timeout in seconds; multiplied by 20 ticks at the point of use. */
+	/** Timeout in seconds, as shown in the UI and stored in the config file. */
 	public static int idleSeconds = 16;
+	/**
+	 * Cached idle window in client ticks ({@link #idleSeconds} * 20), refreshed whenever
+	 * {@link #idleSeconds} changes - the per-tick path only compares and never recomputes.
+	 */
+	public static int intervalTicks = 16 * 20;
 
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static Path path;
@@ -48,18 +53,32 @@ public final class IdleConfig {
 		try {
 			JsonObject json = JsonParser.parseString(Files.readString(path)).getAsJsonObject();
 			if (json.has("enabled")) enabled = json.get("enabled").getAsBoolean();
-			if (json.has("idleSeconds")) idleSeconds = clamp(json.get("idleSeconds").getAsInt());
+			if (json.has("idleSeconds")) apply(json.get("idleSeconds").getAsInt());
 		} catch (Throwable t) {
 			warnIo("config read failed, using defaults", t);
 		}
+		apply(idleSeconds);
+	}
+
+	/**
+	 * Single point of entering a timeout: clamps it into the configured range and refreshes
+	 * the cached tick window, so every reader agrees on one value.
+	 *
+	 * @param seconds new timeout in seconds (from the config file or the Mod Menu slider)
+	 */
+	public static void apply(int seconds) {
+		idleSeconds = clamp(seconds);
+		intervalTicks = idleSeconds * 20;
 	}
 
 	/** Writes via a temp file and an atomic move; safe to call concurrently on the client thread. */
 	public static void save() {
+		// Keep the invariant "stored value = sanitized value" even for hand-edited configs.
+		apply(idleSeconds);
 		try {
 			JsonObject json = new JsonObject();
 			json.addProperty("enabled", enabled);
-			json.addProperty("idleSeconds", clamp(idleSeconds));
+			json.addProperty("idleSeconds", idleSeconds);
 			Path file = path != null ? path : FabricLoader.getInstance().getConfigDir().resolve("inspect-animations-idle.json");
 			Path temp = file.resolveSibling(file.getFileName() + ".tmp");
 			Files.writeString(temp, GSON.toJson(json));
