@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Inventory.class)
 public class InventoryMixin {
 	@Inject(method = "setSelectedSlot", at = @At("HEAD"))
-	private void inspectfix$onSelectSlot(CallbackInfo ci) {
+	private void idle$onSelectSlot(CallbackInfo ci) {
 		IdleInspector.onActivity();
 	}
 }

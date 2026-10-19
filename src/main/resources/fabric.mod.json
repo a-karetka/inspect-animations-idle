@@ -1,33 +1,33 @@
 {
 	"schemaVersion": 1,
-	"id": "inspect-animations-fix",
+	"id": "inspect-animations-idle",
 	"version": "${version}",
-	"name": "Inspect Animations Fix",
+	"name": "Inspect Animations Idle",
 	"description": "Expands Inspect Animations with idle auto-inspections: a configurable inaction timeout triggers the selected or Turn animation. Also ships item tags (turn, toss, flip, flourish) for per-animation item tagging.",
 	"authors": [
 		"a-karetka"
 	],
 	"contact": {
-		"homepage": "https://github.com/a-karetka/inspect-animations-fix",
-		"issues": "https://github.com/a-karetka/inspect-animations-fix/issues",
-		"sources": "https://github.com/a-karetka/inspect-animations-fix"
+		"homepage": "https://github.com/a-karetka/inspect-animations-idle",
+		"issues": "https://github.com/a-karetka/inspect-animations-idle/issues",
+		"sources": "https://github.com/a-karetka/inspect-animations-idle"
 	},
 	"custom": {
 		"modmenu": {
 			"links": {
-				"inspect-animations-fix.telegram": "https://t.me/karetkaclub"
+				"inspect-animations-idle.telegram": "https://t.me/karetkaclub"
 			}
 		}
 	},
 	"license": "MIT",
-	"icon": "assets/inspect-animations-fix/icon.png",
+	"icon": "assets/inspect-animations-idle/icon.png",
 	"environment": "client",
 	"entrypoints": {
 		"main": [
-			"com.github.akaretka.InspectAnimationsFix"
+			"com.github.akaretka.InspectAnimationsIdle"
 		],
 		"client": [
-			"com.github.akaretka.client.InspectAnimationsFixClient"
+			"com.github.akaretka.client.InspectAnimationsIdleClient"
 		],
 		"modmenu": [
 			"com.github.akaretka.client.ModMenuIntegration"
@@ -35,7 +35,7 @@
 	},
 	"mixins": [
 		{
-			"config": "inspect-animations-fix.client.mixins.json",
+			"config": "inspect-animations-idle.client.mixins.json",
 			"environment": "client"
 		}
 	],

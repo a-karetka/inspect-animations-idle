@@ -5,7 +5,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
 
-import com.github.akaretka.InspectAnimationsFix;
+import com.github.akaretka.InspectAnimationsIdle;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonObject;
@@ -14,13 +14,13 @@ import com.google.gson.JsonParser;
 import net.fabricmc.loader.api.FabricLoader;
 
 /**
- * Minimal JSON config for the idle feature ({@code config/inspect-animations-fix.json}).
+ * Minimal JSON config for the idle feature ({@code config/inspect-animations-idle.json}).
  *
  * <p>State is held in public static fields for zero-cost reads from the per-tick hot path.
  * Writing is atomic (temp file + {@code ATOMIC_MOVE}) so a crash mid-save cannot corrupt
  * the config; I/O failures are logged once and never propagate to the game loop.
  */
-public final class IdleFixConfig {
+public final class IdleConfig {
 
 	/** Bounds applied both on load and on save; the slider screen reuses them. */
 	public static final int MIN_IDLE_SECONDS = 1;
@@ -35,12 +35,12 @@ public final class IdleFixConfig {
 	private static Path path;
 	private static boolean warnedIo;
 
-	private IdleFixConfig() {
+	private IdleConfig() {
 	}
 
 	/** Reads the config file; a missing file is created with defaults on the spot. */
 	public static void load() {
-		path = FabricLoader.getInstance().getConfigDir().resolve("inspect-animations-fix.json");
+		path = FabricLoader.getInstance().getConfigDir().resolve("inspect-animations-idle.json");
 		if (!Files.isRegularFile(path)) {
 			save();
 			return;
@@ -60,7 +60,7 @@ public final class IdleFixConfig {
 			JsonObject json = new JsonObject();
 			json.addProperty("enabled", enabled);
 			json.addProperty("idleSeconds", clamp(idleSeconds));
-			Path file = path != null ? path : FabricLoader.getInstance().getConfigDir().resolve("inspect-animations-fix.json");
+			Path file = path != null ? path : FabricLoader.getInstance().getConfigDir().resolve("inspect-animations-idle.json");
 			Path temp = file.resolveSibling(file.getFileName() + ".tmp");
 			Files.writeString(temp, GSON.toJson(json));
 			Files.move(temp, file, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.ATOMIC_MOVE);
@@ -77,6 +77,6 @@ public final class IdleFixConfig {
 	private static void warnIo(String message, Throwable cause) {
 		if (warnedIo) return;
 		warnedIo = true;
-		InspectAnimationsFix.LOGGER.error("[idle] config: {}", message, cause);
+		InspectAnimationsIdle.LOGGER.error("[idle] config: {}", message, cause);
 	}
 }

@@ -1,6 +1,6 @@
 package com.github.akaretka.client.screen;
 
-import com.github.akaretka.client.idle.IdleFixConfig;
+import com.github.akaretka.client.idle.IdleConfig;
 import net.minecraft.client.gui.components.AbstractSliderButton;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
@@ -12,15 +12,15 @@ import net.minecraft.network.chat.MutableComponent;
  * Values apply immediately; they are persisted when the screen closes ({@link #onClose}),
  * which also covers the Escape key.
  */
-public final class IdleFixScreen extends Screen {
+public final class IdleScreen extends Screen {
 
-	private static final int MIN_SECONDS = IdleFixConfig.MIN_IDLE_SECONDS;
-	private static final int MAX_SECONDS = IdleFixConfig.MAX_IDLE_SECONDS;
+	private static final int MIN_SECONDS = IdleConfig.MIN_IDLE_SECONDS;
+	private static final int MAX_SECONDS = IdleConfig.MAX_IDLE_SECONDS;
 
 	private final Screen previous;
 
-	public IdleFixScreen(Screen previous) {
-		super(Component.translatable("inspect-animations-fix.idlefix.title"));
+	public IdleScreen(Screen previous) {
+		super(Component.translatable("inspect-animations-idle.idle.title"));
 		this.previous = previous;
 	}
 
@@ -29,7 +29,7 @@ public final class IdleFixScreen extends Screen {
 		int centerX = this.width / 2;
 		int top = this.height / 2 - 36;
 		addRenderableWidget(Button.builder(toggleMessage(), button -> {
-			IdleFixConfig.enabled = !IdleFixConfig.enabled;
+			IdleConfig.enabled = !IdleConfig.enabled;
 			button.setMessage(toggleMessage());
 		}).bounds(centerX - 155, top, 150, 20).build());
 		addRenderableWidget(new SecondsSlider(centerX + 5, top, 150, 20));
@@ -39,28 +39,28 @@ public final class IdleFixScreen extends Screen {
 
 	@Override
 	public void onClose() {
-		IdleFixConfig.save();
+		IdleConfig.save();
 		this.minecraft.gui.setScreen(this.previous);
 	}
 
 	private static MutableComponent toggleMessage() {
-		return Component.translatable("inspect-animations-fix.idlefix.enabled").append(": ")
-				.append(IdleFixConfig.enabled ? Component.translatable("inspect-animations-fix.idlefix.on") : Component.translatable("inspect-animations-fix.idlefix.off"));
+		return Component.translatable("inspect-animations-idle.idle.enabled").append(": ")
+				.append(IdleConfig.enabled ? Component.translatable("inspect-animations-idle.idle.on") : Component.translatable("inspect-animations-idle.idle.off"));
 	}
 
 	private static MutableComponent secondsMessage() {
-		return Component.translatable("inspect-animations-fix.idlefix.idle_seconds", IdleFixConfig.idleSeconds);
+		return Component.translatable("inspect-animations-idle.idle.idle_seconds", IdleConfig.idleSeconds);
 	}
 
 	private static double toSliderValue(int seconds) {
 		return (seconds - MIN_SECONDS) / (double) (MAX_SECONDS - MIN_SECONDS);
 	}
 
-	/** Slider over the [MIN_SECONDS; MAX_SECONDS] range, matching IdleFixConfig bounds. */
+	/** Slider over the [MIN_SECONDS; MAX_SECONDS] range, matching IdleConfig bounds. */
 	private final class SecondsSlider extends AbstractSliderButton {
 
 		private SecondsSlider(int x, int y, int width, int height) {
-			super(x, y, width, height, secondsMessage(), toSliderValue(IdleFixConfig.idleSeconds));
+			super(x, y, width, height, secondsMessage(), toSliderValue(IdleConfig.idleSeconds));
 		}
 
 		@Override
@@ -71,7 +71,7 @@ public final class IdleFixScreen extends Screen {
 		@Override
 		protected void applyValue() {
 			int seconds = (int) Math.round(MIN_SECONDS + (MAX_SECONDS - MIN_SECONDS) * value);
-			IdleFixConfig.idleSeconds = Math.clamp(seconds, MIN_SECONDS, MAX_SECONDS);
+			IdleConfig.idleSeconds = Math.clamp(seconds, MIN_SECONDS, MAX_SECONDS);
 		}
 	}
 }

@@ -10,4 +10,4 @@ pluginManagement {
 }
 
 // Should match your modid
-rootProject.name = 'inspect-animations-fix'
+rootProject.name = 'inspect-animations-idle'

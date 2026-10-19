@@ -1,4 +1,4 @@
-# Inspect Animations Fix
+# Inspect Animations Idle
 
 English | [Русский](README.ru.md)
 
@@ -9,7 +9,7 @@ Inactivity is reset by any of the following player actions:
 - Using an item (**left click** or **right click**)
 - Switching items (**hotbar keys 1-9**, **mouse wheel**, **offhand swap** with F)
 
-Everything is configurable from the Mod Menu config screen: the feature can be toggled and the idle timeout can be changed (1-180 seconds). The setting is stored in `config/inspect-animations-fix.json`.
+Everything is configurable from the Mod Menu config screen: the feature can be toggled and the idle timeout can be changed (1-180 seconds). The setting is stored in `config/inspect-animations-idle.json`.
 
 ## Requirements
 
@@ -24,30 +24,16 @@ The mod also ships four item tags - one per Inspect Animations animation - so it
 
 | Tag | Animation |
 | --- | --- |
-| `inspect-animations-fix:turn` | Turn |
-| `inspect-animations-fix:toss` | Toss |
-| `inspect-animations-fix:flip` | Flip |
-| `inspect-animations-fix:flourish` | Flourish |
+| `inspect-animations-idle:turn` | Turn |
+| `inspect-animations-idle:toss` | Toss |
+| `inspect-animations-idle:flip` | Flip |
+| `inspect-animations-idle:flourish` | Flourish |
 
 To use them, open the Inspect Animations config (**Animations for specific items**) and add the tag for the animation you want, prefixed with `#`:
 
-- Turn: `#inspect-animations-fix:turn`
-- Toss: `#inspect-animations-fix:toss`
-- Flip: `#inspect-animations-fix:flip`
-- Flourish: `#inspect-animations-fix:flourish`
+- Turn: `#inspect-animations-idle:turn`
+- Toss: `#inspect-animations-idle:toss`
+- Flip: `#inspect-animations-idle:flip`
+- Flourish: `#inspect-animations-idle:flourish`
 
 Every item you add to a tag file plays that animation when inspected - including the idle auto-animations triggered by this mod. Tag files can contain plain item IDs (`minecraft:diamond_sword`) or references to other tags prefixed with `#` (for example `#minecraft:swords`).
-
-## Building
-
-Requires a Java 25 JDK:
-
-```sh
-./gradlew build
-```
-
-The built jar is placed in `build/libs/`.
-
-## License
-
-Distributed under the [MIT License](LICENSE).

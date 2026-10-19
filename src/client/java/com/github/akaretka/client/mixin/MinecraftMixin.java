@@ -21,17 +21,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(Minecraft.class)
 public class MinecraftMixin {
 	@Inject(method = "startUseItem", at = @At("HEAD"))
-	private void inspectfix$onUseItem(CallbackInfo ci) {
+	private void idle$onUseItem(CallbackInfo ci) {
 		IdleInspector.onActivity();
 	}
 
 	@Inject(method = "startAttack", at = @At("HEAD"))
-	private void inspectfix$onAttack(CallbackInfoReturnable<Boolean> cir) {
+	private void idle$onAttack(CallbackInfoReturnable<Boolean> cir) {
 		IdleInspector.onActivity();
 	}
 
 	@Inject(method = "continueAttack", at = @At("HEAD"))
-	private void inspectfix$onContinueAttack(boolean leftClick, CallbackInfo ci) {
+	private void idle$onContinueAttack(boolean leftClick, CallbackInfo ci) {
 		if (leftClick) IdleInspector.onActivity();
 	}
 }

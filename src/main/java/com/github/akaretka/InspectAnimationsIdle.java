@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
  * Main entrypoint (shared source set). The mod itself is fully client-side; the main entrypoint
  * only exists so the jar loads cleanly in any environment, holding the shared LOGGER.
  */
-public class InspectAnimationsFix implements ModInitializer {
-	public static final String MOD_ID = "inspect-animations-fix";
+public class InspectAnimationsIdle implements ModInitializer {
+	public static final String MOD_ID = "inspect-animations-idle";
 
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 

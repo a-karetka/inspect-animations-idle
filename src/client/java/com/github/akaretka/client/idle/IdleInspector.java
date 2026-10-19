@@ -4,7 +4,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.ThreadLocalRandom;
 
-import com.github.akaretka.InspectAnimationsFix;
+import com.github.akaretka.InspectAnimationsIdle;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
@@ -67,7 +67,7 @@ public final class IdleInspector {
 	private static void tick(Minecraft minecraft) {
 		// Cheapest possible tick path: static flag read, counter increment, comparison.
 		// Disabling resets the counter so that re-enabling starts a fresh window.
-		if (!IdleFixConfig.enabled) {
+		if (!IdleConfig.enabled) {
 			idleTicks = 0;
 			return;
 		}
@@ -76,7 +76,7 @@ public final class IdleInspector {
 		// A key press leaves the mapping "down" only while the game is in-game (no screen open),
 		// so this produces no false activity from GUIs or the title screen.
 		if (minecraft.options.keySwapOffhand.isDown()) idleTicks = 0;
-		if (++idleTicks < IdleFixConfig.idleSeconds * 20) return;
+		if (++idleTicks < IdleConfig.idleSeconds * 20) return;
 		// Reset first so a failing invocation below can never cause a cascade of triggers.
 		idleTicks = 0;
 		// Triggers are skipped in menus and while the game is paused; the counter itself
@@ -147,7 +147,7 @@ public final class IdleInspector {
 			} catch (Throwable t) {
 				sendTurnAnimation = null;
 				turnAnimation = null;
-				InspectAnimationsFix.LOGGER.warn("[idle] constant '{}' not found in {}, turn action unavailable", TURN_ANIMATION_NAME, ANIMATION_HELPER_CLASS);
+				InspectAnimationsIdle.LOGGER.warn("[idle] constant '{}' not found in {}, turn action unavailable", TURN_ANIMATION_NAME, ANIMATION_HELPER_CLASS);
 			}
 		}
 		if (sendSelectedAnimation == null && sendTurnAnimation == null) {
@@ -171,11 +171,11 @@ public final class IdleInspector {
 				.orElse("");
 		int[] parts = parseVersion(version);
 		if (parts == null) {
-			InspectAnimationsFix.LOGGER.warn("[idle] Inspect Animations version '{}' could not be parsed, skipping version check", version);
+			InspectAnimationsIdle.LOGGER.warn("[idle] Inspect Animations version '{}' could not be parsed, skipping version check", version);
 			return true;
 		}
 		if (parts[0] == SUPPORTED_MAJOR && parts[1] == SUPPORTED_MINOR && parts[2] >= SUPPORTED_MIN_PATCH) {
-			InspectAnimationsFix.LOGGER.info("[idle] Inspect Animations {} detected, idle actions available", version);
+			InspectAnimationsIdle.LOGGER.info("[idle] Inspect Animations {} detected, idle actions available", version);
 			return true;
 		}
 		disable("unsupported Inspect Animations version " + version + " (supported: " + SUPPORTED_VERSION_RANGE + ")", null);
@@ -206,7 +206,7 @@ public final class IdleInspector {
 		String version = FabricLoader.getInstance().getModContainer(INSPECT_MOD_ID)
 				.map(container -> container.getMetadata().getVersion().getFriendlyString())
 				.orElse("missing");
-		InspectAnimationsFix.LOGGER.warn("[idle] {} (Inspect Animations {}); idle actions disabled", message, version);
-		if (cause != null) InspectAnimationsFix.LOGGER.warn("[idle] caused by", cause);
+		InspectAnimationsIdle.LOGGER.warn("[idle] {} (Inspect Animations {}); idle actions disabled", message, version);
+		if (cause != null) InspectAnimationsIdle.LOGGER.warn("[idle] caused by", cause);
 	}
 }

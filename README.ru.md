@@ -1,4 +1,4 @@
-# Inspect Animations Fix
+# Inspect Animations Idle
 
 [English](README.md) | Русский
 
@@ -9,7 +9,7 @@
 - Использование предмета (**ЛКМ** или **ПКМ**)
 - Смена предмета (**цифры 1-9**, **колёсико мыши**, **свап в offhand**)
 
-Настройки доступны через Mod Menu: включение/выключение и таймаут бездействия (1-180 сек). Настройка хранится в `config/inspect-animations-fix.json`.
+Настройки доступны через Mod Menu: включение/выключение и таймаут бездействия (1-180 сек). Настройка хранится в `config/inspect-animations-idle.json`.
 
 ### Требования
 
@@ -24,30 +24,16 @@
 
 | Тег | Анимация |
 | --- | --- |
-| `inspect-animations-fix:turn` | Turn |
-| `inspect-animations-fix:toss` | Toss |
-| `inspect-animations-fix:flip` | Flip |
-| `inspect-animations-fix:flourish` | Flourish |
+| `inspect-animations-idle:turn` | Turn |
+| `inspect-animations-idle:toss` | Toss |
+| `inspect-animations-idle:flip` | Flip |
+| `inspect-animations-idle:flourish` | Flourish |
 
 Чтобы использовать: откройте конфиг Inspect Animations (**Animations for specific items**) и добавьте тег к нужной анимации с префиксом `#`:
 
-- Turn: `#inspect-animations-fix:turn`
-- Toss: `#inspect-animations-fix:toss`
-- Flip: `#inspect-animations-fix:flip`
-- Flourish: `#inspect-animations-fix:flourish`
+- Turn: `#inspect-animations-idle:turn`
+- Toss: `#inspect-animations-idle:toss`
+- Flip: `#inspect-animations-idle:flip`
+- Flourish: `#inspect-animations-idle:flourish`
 
 Каждый предмет из файла тега будет проигрывать эту анимацию при осмотре - в том числе через авто-анимации при бездействии. В файлах тегов можно перечислять прямые id предметов (`minecraft:diamond_sword`) или ссылки на другие теги с префиксом `#` (например `#minecraft:swords`).
-
-### Сборка
-
-Нужен JDK 25:
-
-```sh
-./gradlew build
-```
-
-Готовый jar появится в `build/libs/`.
-
-### Лицензия
-
-Распространяется по [лицензии MIT](LICENSE).
