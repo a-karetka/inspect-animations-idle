@@ -5,7 +5,7 @@ import java.lang.reflect.Modifier;
 import java.util.concurrent.ThreadLocalRandom;
 
 import com.github.akaretka.InspectAnimationsIdle;
-import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -16,7 +16,9 @@ import net.minecraft.client.player.LocalPlayer;
  * <p>The integration is a runtime probe instead of a direct dependency: Inspect Animations
  * does not expose a public API, so its package-private {@code AnimationHelper.sendAnimation}
  * methods are resolved once via reflection and re-played exactly like a key press would.
- * Found only on the client thread; the per-tick hot path keeps allocations and syscalls out.
+ * The probe runs once at client startup ({@link #init()}), before the first tick, so an
+ * incompatible-or-missing upstream is reported in the log pre-game instead of after the
+ * first idle timeout; the trigger path never pays for reflection.
  * If Inspect Animations is missing or incompatible, the feature disables itself instead of crashing.
  */
 public final class IdleInspector {
@@ -53,8 +55,6 @@ public final class IdleInspector {
 	private static int windowTicks = IdleConfig.firstIntervalTicks;
 	/** Which of the two windows is charged; flips on trigger and activity resets. */
 	private static boolean firstWindowCharged = true;
-	/** Set once the reflection probe has run; the trigger path must not repeat it. */
-	private static boolean resolved;
 	/** Fail-safe latch: any integration failure switches the feature off permanently. */
 	private static boolean disabled;
 	/** {@code AnimationHelper.sendAnimation(LocalPlayer)} - plays the currently selected animation. */
@@ -67,9 +67,14 @@ public final class IdleInspector {
 	private IdleInspector() {
 	}
 
-	/** Registers the tick handler; called once from the client entrypoint. */
+	/**
+	 * Runs the one-shot reflection probe; called once from the client entrypoint. The per-tick
+	 * entry point ({@link #onClientTick(Minecraft)}) is driven by the vanilla hook in
+	 * {@code MinecraftMixin}, there is nothing left to register here beyond resolving the
+	 * upstream methods so the log gets its diagnosis at game start, not after the first window.
+	 */
 	public static void init() {
-		ClientTickEvents.END_CLIENT_TICK.register(IdleInspector::tick);
+		resolveActions();
 	}
 
 	/**
@@ -131,17 +136,23 @@ public final class IdleInspector {
 		if (IdleConfig.resetItemReplace) armFirstWindow();
 	}
 
-	private static void tick(Minecraft minecraft) {
-		// Cheapest possible tick path: static flag read, counter increment, comparisons.
-		// Disabling resets the counter so that re-enabling starts a fresh window.
-		//
-		// Invariant note (1.1.0): the per-tick budget was deliberately widened. Each state
-		// trigger below is its own config flag so a disabled trigger costs exactly one
-		// boolean field read; enabled state triggers are sampled once every
-		// IdleConfig.STATE_CHECK_MASK ticks via the already-incremented counter, which caps
-		// their worst-case cost at (checks / 4) primitive compares per tick. No allocations
-		// remain - the head-turn check uses the vanilla yRot/yRotO tick pair, no extra
-		// per-tick state is cached.
+	/**
+	 * Per-tick entry point, invoked from the vanilla {@code Minecraft#tick} tail (MinecraftMixin)
+	 * - the same placement {@code ClientTickEvents.END_CLIENT_TICK} used before the Fabric API
+	 * dependency was dropped.
+	 *
+	 * <p>Cheapest possible tick path: static flag read, counter increment, comparisons.
+	 * Disabling resets the counter so that re-enabling starts a fresh window.
+	 *
+	 * <p>Invariant note (1.1.0): the per-tick budget was deliberately widened. Each state
+	 * trigger below is its own config flag so a disabled trigger costs exactly one
+	 * boolean field read; enabled state triggers are sampled once every
+	 * IdleConfig.STATE_CHECK_MASK ticks via the already-incremented counter, which caps
+	 * their worst-case cost at (checks / 4) primitive compares per tick. No allocations
+	 * remain - the head-turn check uses the vanilla yRot/yRotO tick pair, no extra
+	 * per-tick state is cached.
+	 */
+	public static void onClientTick(Minecraft minecraft) {
 		if (!IdleConfig.enabled) {
 			idleTicks = 0;
 			windowTicks = IdleConfig.firstIntervalTicks;
@@ -163,9 +174,9 @@ public final class IdleInspector {
 		// Reset first so a failing invocation below can never cause a cascade of triggers.
 		armFirstWindow();
 		// Triggers are skipped in menus and while the game is paused; the counter itself
-		// keeps running intentionally, per the agreed behaviour.
+		// keeps running intentionally, per the agreed behaviour. The probe already ran at
+		// client startup, so the disabled latch is the only gate left on this path.
 		if (minecraft.player == null || minecraft.level == null || minecraft.isPaused()) return;
-		if (!resolved) resolveActions();
 		if (disabled) return;
 		Method method = pickAction();
 		if (method == null) return;
@@ -234,7 +245,6 @@ public final class IdleInspector {
 	 * renames in Inspect Animations do not break the lookup as long as the signatures survive.
 	 */
 	private static void resolveActions() {
-		resolved = true;
 		if (!FabricLoader.getInstance().isModLoaded(INSPECT_MOD_ID)) {
 			disable("Inspect Animations is not installed", null);
 			return;

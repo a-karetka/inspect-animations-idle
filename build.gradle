@@ -42,8 +42,10 @@ dependencies {
 	minecraft "com.mojang:minecraft:${sc.current.version}"
 	implementation "net.fabricmc:fabric-loader:${property('deps.fabric_loader')}"
 
-	// Fabric API. This is technically optional, but you probably want it anyway.
-	implementation "net.fabricmc.fabric-api:fabric-api:${property('deps.fabric_api')}"
+	// No Fabric API: the mod used exactly one of its entrypoints (END_CLIENT_TICK), now
+	// served by the vanilla tick-tail hook in MinecraftMixin. Inspect Animations - this
+	// mod's hard dependency - pulls Fabric API into every real install anyway, so nothing
+	// changes for users; this only trims one per-version dependency from the build.
 
 	// ModMenu (compile-only; loaded at runtime only when Mod Menu itself is installed)
 	compileOnly "com.terraformersmc:modmenu:${property('deps.modmenu')}"

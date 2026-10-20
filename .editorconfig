@@ -1,0 +1,18 @@
+# Root editor settings; this repo uses one Git working tree for every supported
+# Minecraft version (Stonecutter), so the rules apply repo-wide.
+root = true
+
+[*]
+charset = utf-8
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+# Java and Gradle sources are tab-indented throughout. JSON/YAML are not
+# uniform (the *generated* tag JSONs use 2-space indent, workflow YAML uses
+# 2 spaces, hand-written resource JSONs use tabs), so no blanket rule for them.
+[*.java]
+indent_style = tab
+
+[*.gradle]
+indent_style = tab

@@ -17,14 +17,14 @@ Key property: it integrates with a mod it does not control, through a **fail-saf
 - **All version-independent settings live in `stonecutter.properties.toml`** — `mod.id`,
   `mod.version`, `mod.group`, `deps.fabric_loader`, plus one `["26.x"]` section per
   supported Minecraft version holding its `mod.mc_compat`, `mod.mc_releases` and the
-  per-version dependency versions (`deps.fabric_api`, `deps.modmenu`, `deps.yacl`).
+  per-version dependency versions (`deps.modmenu`, `deps.yacl`).
   `gradle.properties` holds Gradle options only. Details in «Multi-version build» below.
 - `src/main/java` holds only the common entrypoint (`com.github.akaretka.InspectAnimationsIdle`, the shared `LOGGER`) — the mod is client-only (`"environment": "client"` in `fabric.mod.json`); never add server-side logic there.
 - `src/client/java/com/github/akaretka/client/` holds all runtime logic: `mixin/` (vanilla hooks), `idle/` (`IdleInspector`, `IdleConfig`), `screen/`, the client entrypoint and Mod Menu integration.
   The whole `src/` tree is **shared between all supported Minecraft versions**;
   version-conditioned code goes through Stonecutter comments, and per-version resources
   through the build wiring (see the tags bullet).
-- Dependency model in `src/main/resources/fabric.mod.json`: `inspectanimations ^0.2.5` is a *hard* `depends`; `modmenu` is `suggests` (optional).
+- Dependency model in `src/main/resources/fabric.mod.json`: `inspectanimations ^0.2.5` is a *hard* `depends`; `modmenu` is `suggests` (optional); `yet_another_config_lib_v3` is a hard `depends` that is only ever compiled against (see IdleConfigScreen). No Fabric API entry - upstream's own hard `depends` brings it into every loadable install.
 - Mixin config `src/client/resources/inspect-animations-idle.client.mixins.json` uses `defaultRequire: 1` — injection failures crash the game. Targets `startUseItem`/`startAttack`/`continueAttack`, `Inventory#setSelectedSlot` and `Inventory#setItem` are `private` vanilla methods; mixin handles private targets fine. The `setItem` hook filters slots itself: only the selected hotbar slot and the offhand slot (40) may reach IdleInspector — armor and storage changes are not activity and must stay out.
 - Item tags are **generated output** of `tools/tags/generate.py` (Python 3 std-lib only),
   committed **per Minecraft version** in `src/generated/tags/<mc>/` (`turn`, `toss`, `flip`,
@@ -51,14 +51,19 @@ vanilla Minecraft ──mixins──▶ IdleInspector.on<Source>()   (flag-gated
                      setItem       → onItemReplace (only slot == selected or slot 40)
    MinecraftMixin  ▶ startUseItem → onItemUse (RMB, re-fires while held)
                      startAttack / continueAttack → onAttack / onAttackHold (LMB)
+                     tick-tail     → onClientTick (the per-tick entry point itself)
 
-per-tick (END_CLIENT_TICK) ▶ IdleInspector.tick()
+per-tick (Minecraft#tick TAIL) ▶ IdleInspector.onClientTick()
    hot path: read enabled ▸ (resetOffhandSwap + keySwapOffhand.isDown() → armFirstWindow)
       ▸ ++idleTicks vs windowTicks ▸ below window: every 4th tick (STATE_CHECK_MASK)
         run the enabled state triggers (sprint/walk/crouch/head-turn/creative-fly/elytra)
    trigger path (once per window): armFirstWindow (counter 0, first window charged)
-      ▸ skip if player/level null or paused ▸ resolveActions() once (reflection probe)
+      ▸ skip if player/level null or paused (the probe has already run at client
+        startup - the disabled latch is the only gate left here)
       ▸ invoke upstream AnimationHelper.sendAnimation ▸ only then charge the next window
+
+Entrypoint ▶ IdleConfig.load() ▸ IdleInspector.init() = one-shot resolveActions() probe
+   (upstream methods resolved + diagnostics logged at game start, not after the first window)
 
 IdleConfig.applyFirst/applyNext/applyHeadTurn — clamp and refresh the tick-domain caches
    (firstIntervalTicks / nextIntervalTicks / headTurnDegrees); live edits notify
@@ -114,7 +119,7 @@ One shared codebase, one jar per supported Minecraft version:
 - `stonecutter.gradle` is the **controller** (`stonecutter active '26.3'` selects the
   version whose sources are linked in the IDE) plus the `buildAll` aggregate task.
 - `stonecutter.properties.toml` holds global values (`mod.version`, ...) and one section
-  per node (`deps.fabric_api`, `deps.modmenu`, `deps.yacl`, `mod.mc_compat`, `mod.mc_releases`).
+  per node (`deps.modmenu`, `deps.yacl`, `mod.mc_compat`, `mod.mc_releases`).
 - `build.gradle` is the **central per-node template**: evaluated once per version with
   `sc.current.version` set; inter-version code differences use Stonecutter
   conditional comments (`//? if <version {`), not per-version file copies.
@@ -194,8 +199,11 @@ Write every new piece of code with that in mind, not just existing files.
   sources), private static fields for cached state, `final` utility classes.
 - Mixin handler methods use the `idle$` prefix naming scheme; constants in
   `UPPER_SNAKE_CASE` with Javadoc.
-- Keep the dependency set closed: vanilla + Fabric API + compile-only APIs that are
-  guaranteed present at runtime. Two compile-time-only integrations exist: Mod Menu
+- Keep the dependency set closed: vanilla + compile-only APIs that are
+  guaranteed present at runtime. Fabric API is not a dependency any more: the only
+  entrypoint this mod ever used (END_CLIENT_TICK) is now the vanilla tick-tail hook in
+  `MinecraftMixin`, and Inspect Animations (our hard `depends`) pulls Fabric API into
+  every real install anyway. Two compile-time-only integrations exist: Mod Menu
   (its own entrypoint, loaded only when Mod Menu is installed) and YetAnotherConfigLib
   (the config screen API; compile-only and never bundled, declared as a hard `depends`
   in `fabric.mod.json` - Inspect Animations hard-depends on it too, so real installs
@@ -241,7 +249,8 @@ Write every new piece of code with that in mind, not just existing files.
    Modrinth manually: per-version upload entries `X.Y.Z` loader Fabric, one per game
    version set - 26.1/26.1.1/26.1.2 for the `+26.1.2` jar, 26.2 for `+26.2`, 26.3 for
    `+26.3`; dependencies per file: Inspect Animations (required), YetAnotherConfigLib
-   (required), Fabric API (required), Mod Menu (optional).
+   (required), Mod Menu (optional). Fabric API is pulled in by Inspect Animations itself
+   - since 1.2.0 this mod neither uses nor declares it.
 5. Verify in CI logs that mixins applied and no module failed for any version
    (grep the logs for injection failures).
 

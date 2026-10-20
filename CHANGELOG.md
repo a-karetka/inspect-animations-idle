@@ -5,7 +5,7 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.2.0] - 2026-10-20
 
 ### Added
 
@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Fabric API is no longer used or declared as a dependency: the only entrypoint this mod
+  ever consumed (`END_CLIENT_TICK`) is now the mod's own hook at the end of vanilla
+  `Minecraft#tick`. In every real install Fabric API stays present via Inspect Animations'
+  own dependency - nothing changes for users.
+- The integration probe against Inspect Animations now runs once at client startup, so a
+  missing or incompatible upstream is reported in the log at game start instead of after
+  the first idle timeout.
 - The item tag generator writes its output per Minecraft version
   (`src/generated/tags/<mc>/`) and takes the matching vanilla jar for that version
   (via `--mc`); it no longer silently reuses a cached jar of a different game version.
@@ -122,7 +129,8 @@ silently running without the idle feature. Unsupported versions are rejected at 
   - for per-animation item tagging in the Inspect Animations config.
 - Mod Menu integration (optional dependency).
 
-[Unreleased]: https://github.com/a-karetka/inspect-animations-idle/compare/v1.1.0...HEAD
+[Unreleased]: https://github.com/a-karetka/inspect-animations-idle/compare/v1.2.0...HEAD
+[1.2.0]: https://github.com/a-karetka/inspect-animations-idle/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/a-karetka/inspect-animations-idle/compare/v1.0.2...v1.1.0
 [1.0.2]: https://github.com/a-karetka/inspect-animations-idle/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/a-karetka/inspect-animations-idle/compare/v1.0.0...v1.0.1

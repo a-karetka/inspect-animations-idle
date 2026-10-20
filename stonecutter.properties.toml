@@ -1,7 +1,7 @@
 # Centralized Stonecutter properties: shared values first, one section per
 # supported Minecraft version below. Consumed by build.gradle through
 # property()/sc.properties for both the compile classpath and fabric.mod.json.
-# Per-version dependency boxes exist on Modrinth/FabricMC maven - add a section
+# Per-version dependency boxes exist on Modrinth/FabricMC - add a section
 # (and a settings.gradle entry) together when a new Minecraft version is opened.
 
 mod.id = "inspect-animations-idle"
@@ -17,7 +17,6 @@ deps.fabric_loader = "0.19.5"
 mod.mc_compat = ">=26.1 <26.2"
 mod.mc_releases = ["26.1", "26.1.1", "26.1.2"]
 
-deps.fabric_api = "0.155.3+26.1.2"
 deps.modmenu = "18.0.2"
 deps.yacl = "3.9.7+26.1-fabric"
 
@@ -25,7 +24,6 @@ deps.yacl = "3.9.7+26.1-fabric"
 mod.mc_compat = ">=26.2 <26.3"
 mod.mc_releases = ["26.2"]
 
-deps.fabric_api = "0.161.0+26.2"
 deps.modmenu = "20.0.3"
 deps.yacl = "3.9.7+26.2-fabric"
 
@@ -33,6 +31,5 @@ deps.yacl = "3.9.7+26.2-fabric"
 mod.mc_compat = ">=26.3 <26.4"
 mod.mc_releases = ["26.3"]
 
-deps.fabric_api = "0.163.0+26.3"
 deps.modmenu = "21.0.0"
 deps.yacl = "3.9.7+26.3-fabric"

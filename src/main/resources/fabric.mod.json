@@ -43,7 +43,6 @@
 		"fabricloader": ">=0.19.5",
 		"minecraft": "${minecraft}",
 		"java": ">=25",
-		"fabric-api": "*",
 		"yet_another_config_lib_v3": "*",
 		"inspectanimations": ">=0.2.5 <0.3.0"
 	},
