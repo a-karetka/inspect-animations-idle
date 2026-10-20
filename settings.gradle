@@ -4,10 +4,34 @@ pluginManagement {
 			name = 'Fabric'
 			url = 'https://maven.fabricmc.net/'
 		}
+		maven {
+			name = 'KikuGie'
+			url = 'https://maven.kikugie.dev/releases'
+		}
 		mavenCentral()
 		gradlePluginPortal()
 	}
 }
 
-// Should match your modid
+plugins {
+	// Multi-version build driver: this project builds once per declared Minecraft
+	// version from a shared codebase (see AGENTS.md "Multi-version build").
+	id 'dev.kikugie.stonecutter' version '0.9.8'
+}
+
+stonecutter {
+	// Groovy DSL for the shared build script (the repo predates Stonecutter, its
+	// style is Groovy); the version template lives in ./build.gradle.
+	kotlinController = false
+	centralScript = 'build.gradle'
+
+	create(rootProject) {
+		// Fabric-only, matching the MC releases Inspect Animations ships for.
+		// The 26.1.2 node serves the whole 26.1(.x) patch line: upstream pins its
+		// jar to 26.1.2, and the 26.1/26.1.1 listings come from Modrinth metadata.
+		versions '26.1.2', '26.2', '26.3'
+		vcsVersion = '26.3'
+	}
+}
+
 rootProject.name = 'inspect-animations-idle'

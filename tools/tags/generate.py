@@ -14,8 +14,10 @@ script); everything else is mechanical:
 
 The full item registry comes from the community-maintained Mojang data dumps
 (misode/mcmeta, tag `<version>-registries`, file `item/data.min.json`) - the jar
-itself only ships tags, not the complete id list. Run once per new Minecraft
-version; `--check` verifies the committed files match a fresh regeneration.
+itself only ships tags, not the complete id list. Run once per supported
+Minecraft version (one `--mc` each: 26.1, 26.2, 26.3 - tag content is
+version-specific); `--check` verifies the committed files of the given version
+match a fresh regeneration.
 Jar source, in order: `--jar PATH`, the jar Loom already downloaded
 (`~/.gradle/caches/fabric-loom/**/minecraft-client.jar`), else from Mojang's
 manifest. Std-lib only.
@@ -32,7 +34,15 @@ import zipfile
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parents[2]
-TAG_DIR = REPO / "src/main/resources/data/inspect-animations-idle/tags/item"
+
+
+def tag_dir(mc: str) -> Path:
+    """Where the generated tag set of one Minecraft version is committed.
+
+    The sets live outside the shared src/ sources because versions differ in
+    content; the build picks the matching set into `data/.../tags/item`.
+    """
+    return REPO / "src/generated/tags" / mc
 
 DEFAULT_MC = "26.3"
 VERSION_MANIFEST = "https://piston-meta.mojang.com/mc/game/version_manifest_v2.json"
@@ -156,8 +166,9 @@ def load_tags(jar: Path) -> tuple[dict, dict]:
     return item_raw, block_raw
 
 
-def write(name: str, items: set) -> None:
-    path = TAG_DIR / f"{name}.json"
+def write(name: str, items: set, mc: str) -> None:
+    path = tag_dir(mc) / f"{name}.json"
+    path.parent.mkdir(parents=True, exist_ok=True)
     values = sorted("minecraft:" + i for i in items)  # full ids: vanilla 26.x style
     path.write_text(json.dumps({"replace": False, "values": values}, indent="  ") + "\n",
                     encoding="utf-8")
@@ -165,19 +176,19 @@ def write(name: str, items: set) -> None:
 
 
 def acquire_jar(mc: str, jar_path: str | None) -> Path:
-    """--jar argument, then the Loom cache, then Mojang's manifest (cached)."""
+    """--jar argument, then the Loom cache, then Mojang's manifest (cached).
+
+    The Loom cache entry must match `mc` exactly - silently reusing the newest
+    cached jar would generate one version's tags from another version's data.
+    """
     if jar_path:
         path = Path(jar_path).expanduser()
         if not path.exists():
             raise SystemExit(f"jar not found: {path}")
         return path
-    loom = Path.home() / ".gradle" / "caches" / "fabric-loom"
-    exact = loom / mc / "minecraft-client.jar"
+    exact = Path.home() / ".gradle" / "caches" / "fabric-loom" / mc / "minecraft-client.jar"
     if exact.exists():
         return exact
-    cached = sorted(loom.rglob("minecraft-client.jar"), key=lambda p: p.stat().st_mtime)
-    if cached:
-        return cached[-1]
     cache_file = MOJANG_CACHE / mc / "client.jar"
     if cache_file.exists():
         return cache_file
@@ -211,7 +222,7 @@ def main() -> int:
     tags = generate(item_raw, block_raw, item_registry(args.mc))
     if args.check:
         for name, items in tags.items():
-            path = TAG_DIR / f"{name}.json"
+            path = tag_dir(args.mc) / f"{name}.json"
             committed = set(json.loads(path.read_text()).get("values", [])) if path.exists() else set()
             if committed != set("minecraft:" + i for i in items):
                 warn(f"{name}.json differs from regeneration")
@@ -220,7 +231,7 @@ def main() -> int:
     for name, items in tags.items():
         if not items:
             raise SystemExit(f"empty {name} tag - rules or curated inputs are broken?")
-        write(name, items)
+        write(name, items, args.mc)
     return 0
 
 

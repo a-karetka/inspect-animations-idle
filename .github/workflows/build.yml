@@ -1,6 +1,7 @@
 # Builds the mod on pull requests, and on version tags (v*) builds and publishes
-# the jars as a GitHub Release. Version numbering: gradle.properties `version`
-# must match the pushed tag (without the "v" prefix) - the workflow enforces this.
+# the per-version jars as a GitHub Release. Version numbering: `mod.version` in
+# stonecutter.properties.toml must match the pushed tag (without the "v" prefix)
+# - the workflow enforces this.
 name: Build
 
 on:
@@ -8,6 +9,19 @@ on:
     tags:
       - 'v*'
   pull_request:
+    # Docs and editorial files cannot change build results; skipping them keeps
+    # the (multi-version) build queue short.
+    paths-ignore:
+      - '**.md'
+      - 'LICENSE'
+      - '.gitignore'
+  workflow_dispatch:
+
+# Superseded builds of the same ref (forced pushes, re-tagged releases) are
+# cancelled instead of racing each other on the release upload step.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -27,34 +41,81 @@ jobs:
       - name: Set up Gradle (with caching)
         uses: gradle/actions/setup-gradle@v4
 
-      # Release tags must agree with the version in gradle.properties,
-      # otherwise the release would carry a jar versioned differently from its tag.
+      # The dev-only localRuntime/flatDir lines live commented out in build.gradle
+      # (this checkout has no libs/ folder - it broke the v1.1.0 tag once).
+      - name: Check dev-only libs lines stay commented
+        run: |
+          if git grep -nE '^[[:space:]]*(localRuntime|compileOnly)[[:space:]]+"libs:' build.gradle; then
+            echo "build.gradle must not reference 'libs:' outside of comments - CI has no libs/ folder"
+            exit 1
+          fi
+
+      # Release tags must agree with the mod version in stonecutter.properties.toml,
+      # otherwise the release would carry jars versioned differently from its tag.
       - name: Verify tag matches mod version
         if: startsWith(github.ref, 'refs/tags/v')
         run: |
           TAG="${GITHUB_REF_NAME#v}"
-          VERSION="$(awk -F= '/^version=/{print $2}' gradle.properties)"
+          VERSION="$(sed -n 's/^mod.version *= *"\(.*\)"/\1/p' stonecutter.properties.toml)"
           if [ "$TAG" != "$VERSION" ]; then
-            echo "Tag 'v$TAG' does not match 'version=$VERSION' in gradle.properties"
+            echo "Tag 'v$TAG' does not match 'mod.version = \"$VERSION\"' in stonecutter.properties.toml"
             echo "Tip: bump the version, or move the tag, then push it again."
             exit 1
           fi
 
-      - name: Build
-        run: ./gradlew build --no-configuration-cache
+      - name: Build all versions
+        run: ./gradlew buildAll --no-configuration-cache
+
+      # The committed per-version tag files must equal a fresh regeneration for
+      # every declared node (see tools/tags/generate.py). Runs after the build so
+      # the vanilla jars can come from the Loom cache that buildAll just populated
+      # (path exists only locally/ cached runs; on a cold runner the script's own
+      # Mojang cache with a download fallback serves instead).
+      - name: Verify generated item tags
+        run: |
+          for mc in 26.1.2 26.2 26.3; do
+            python3 tools/tags/generate.py --check --mc "$mc"
+          done
 
       # PR runs: expose the built jars as downloadable artifacts for review.
+      # Sources jars are dev-only and are excluded from every upload (see AGENTS.md).
       - name: Upload jars (pull requests)
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v4
         with:
           name: jars
-          path: build/libs/*.jar
+          path: |
+            build/libs/**/*.jar
+            !build/libs/**/*-sources.jar
           if-no-files-found: error
 
-      # Tag runs: attach the jars to the GitHub Release for this tag.
+      # Release body: the matching CHANGELOG.md section, so the release page does
+      # not end up (as it did for 1.1.0) with jars but a blank description.
+      - name: Extract changelog section
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          TAG="${GITHUB_REF_NAME#v}"
+          awk -v hdr="## [$TAG]" '
+            /^## \[/ {
+              if (capturing) { exit }
+              capturing = (substr($0, 1, length(hdr)) == hdr)
+              next
+            }
+            capturing
+          ' CHANGELOG.md > release_body.md
+          if [ ! -s release_body.md ]; then
+            echo "CHANGELOG.md has no '## [$TAG]' section - add and date it before tagging."
+            exit 1
+          fi
+          cat release_body.md
+
+      # Tag runs: attach the per-version jars to the GitHub Release for this tag.
       - name: Publish to GitHub Release
         if: startsWith(github.ref, 'refs/tags/v')
         uses: softprops/action-gh-release@v2
         with:
-          files: build/libs/*.jar
+          files: |
+            build/libs/**/*.jar
+            !build/libs/**/*-sources.jar
+          body_path: release_body.md
+          generate_release_notes: true

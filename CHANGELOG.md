@@ -5,7 +5,33 @@ All notable changes to this project are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.0]
+## [Unreleased]
+
+### Added
+
+- Multi-version support: one shared codebase (Stonecutter) now builds a matching jar for
+  the 26.1 patch line (26.1, 26.1.1, 26.1.2 - one file, built from 26.1.2 as far as
+  upstream's own jars are concerned), 26.2 and 26.3 - every version Inspect
+  Animations itself supports on Fabric. Release jars are named
+  `inspect-animations-idle-<version>+<mc>.jar`; a GitHub release carries all of them.
+- Dependency versions, MC compatibility ranges and the version set now live in
+  `stonecutter.properties.toml` (one section per game version); adding a future
+  Minecraft version is a config entry plus a tag regeneration.
+- CI builds every supported version and publishes all per-version jars to the release.
+
+### Changed
+
+- The item tag generator writes its output per Minecraft version
+  (`src/generated/tags/<mc>/`) and takes the matching vanilla jar for that version
+  (via `--mc`); it no longer silently reuses a cached jar of a different game version.
+
+### Fixed
+
+- GitHub Releases now carry the matching CHANGELOG section as their description and
+  exclude the dev-only `-sources` jars from the published assets (the game-install
+  jars are unaffected; 1.1.0 published sources jars and shipped an empty description).
+
+## [1.1.0] - 2026-10-20
 
 ### Added
 
@@ -61,9 +87,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Fixed the publishing of JAR files to GitHub.
 - Icon size reduced.
-- Fixed the version check for Inspect Animations.
+
+### Fixed
+
+- The publishing of JAR files to GitHub.
+- The version check for Inspect Animations.
 
 ## [1.0.1] - 2026-10-19
 

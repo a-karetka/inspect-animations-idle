@@ -1,0 +1,17 @@
+plugins {
+	id 'dev.kikugie.stonecutter'
+}
+
+// The active version drives the conditional evaluation of the shared src/
+// sources and links their classpaths. Switched by the stonecutterSwitchTo*
+// tasks or by editing this string; CI builds every node independently.
+stonecutter.active '26.3'
+
+// Aggregate release folder: runs the per-node buildAndCollect for every declared
+// version, leaving all release jars in build/libs/<mod version>/.
+tasks.register('buildAll') {
+	group = 'build'
+	description = 'Builds the mod for every declared Minecraft version.'
+	dependsOn stonecutter.tasks.named('buildAndCollect')
+}
+

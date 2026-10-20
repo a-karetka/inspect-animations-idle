@@ -4,13 +4,35 @@ English | [Русский](README.ru.md)
 
 [![Build](https://github.com/a-karetka/inspect-animations-idle/actions/workflows/build.yml/badge.svg)](https://github.com/a-karetka/inspect-animations-idle/actions/workflows/build.yml)
 
-A client-side Fabric mod for Minecraft 26.3 that expands [Inspect Animations](https://modrinth.com/mod/inspect-animations) with **idle auto-animations**: stay idle for a set amount of time, and the mod automatically plays one of the Inspect Animations actions - your currently selected animation (like pressing **R**) or the **Turn** animation.
+A client-side Fabric mod for Minecraft **26.1–26.3** that expands [Inspect Animations](https://modrinth.com/mod/inspect-animations) with **idle auto-animations**: stay idle for a set amount of time, and the mod automatically plays one of the Inspect Animations actions - your currently selected animation (like pressing **R**) or the **Turn** animation.
 
 Ordinary actions - using items, switching items, replacing the held item - reset the timer, so animations play only while you are actually doing nothing. Both timeouts, that list of actions and a few optional ones are adjustable.
 
 ## Settings
 
 The mod can be configured through **Mod Menu**.
+
+- **Auto-animations** - the master switch.
+- **First timeout** (1-120 s) - idle time before the very first auto-animation, counted from your last game activity.
+- **Subsequent timeout** (1-120 s) - idle time before every following auto-animation, until you do something in game again.
+
+### Inactivity triggers
+
+The **Experimental functions** tab lists the sources that count as activity and reset the timer; any of them can be turned off.
+
+Actions (**all on** by default):
+
+- hotbar slot switching - keys 1-9 and the mouse wheel;
+- item use - right click, also while the button is held;
+- attack - left click press and held (block breaking);
+- offhand swap - the **F** key;
+- replacing the held item - any pickup, placement, drop or inventory click that changes the stack in the selected hotbar slot or the offhand slot.
+
+States (**all off** by default):
+
+- sprinting, walking/moving, sneaking;
+- camera turns, with an adjustable threshold;
+- creative/spectator flight and elytra gliding.
 
 ## Requirements
 

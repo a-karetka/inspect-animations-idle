@@ -207,7 +207,10 @@ public final class IdleInspector {
 		if (IdleConfig.resetHeadTurn) {
 			float turn = player.getYRot() - player.yRotO;
 			if (turn < 0.0F) turn = -turn;
-			if (turn >= IdleConfig.headTurnDegrees) armFirstWindow();
+			if (turn >= IdleConfig.headTurnDegrees) {
+				armFirstWindow();
+				return;
+			}
 		}
 		if (IdleConfig.resetCreativeFly && player.getAbilities().flying) {
 			armFirstWindow();

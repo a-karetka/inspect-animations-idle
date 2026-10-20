@@ -1,15 +1,26 @@
+// Minecraft version template: Stonecutter evaluates this file once per declared
+// version (26.1, 26.2, 26.3 - see settings.gradle), rootProject -> versions/<mc>/.
+// Concrete dependency versions come from stonecutter.properties.toml.
+
 plugins {
-	id 'net.fabricmc.fabric-loom' version "${loom_version}"
-	id 'maven-publish'
+	// Plain Loom 1.18: Minecraft 26.x ships unobfuscated, so there is no remapping
+	// and no refmap; the same plugin version serves every declared node. If this
+	// ever diverges per Minecraft version, switch to the loom-back-compat plugin.
+	id 'net.fabricmc.fabric-loom' version '1.18-SNAPSHOT'
 }
+
+// Release jars are named {mod.id}-{mod.version}+{mc version}.jar, mirroring how
+// Inspect Animations itself names per-version artifacts.
+version = "${property('mod.version')}+${sc.current.version}"
+base.archivesName = property('mod.id') as String
 
 repositories {
 	maven { url 'https://maven.terraformersmc.com/releases/' }
 	// YACL (the config screen API) resolves from Modrinth's maven below, so neither CI
-	// nor a fresh checkout needs any pre-downloaded jar for `./gradlew build` to pass.
+	// nor a fresh checkout needs any pre-downloaded jar for `./gradlew buildAll` to pass.
 	maven { url 'https://api.modrinth.com/maven' }
 	// Uncomment for dev runs with a locally downloaded Inspect Animations jar:
-	// flatDir { dirs 'libs' }
+	// flatDir { dirs '../../libs' }
 }
 
 loom {
@@ -21,18 +32,21 @@ loom {
 			sourceSet sourceSets.client
 		}
 	}
+
+	// Note: the dev run directory stays per-node (versions/<mc>/run, the Loom default):
+	// sharing it across nodes makes Gradle reject runClient with implicit-dependency
+	// validation errors (every downloadAssets task output lands in one folder).
 }
 
 dependencies {
-	// To change the versions see the gradle.properties file
-	minecraft "com.mojang:minecraft:${project.minecraft_version}"
-	implementation "net.fabricmc:fabric-loader:${project.loader_version}"
+	minecraft "com.mojang:minecraft:${sc.current.version}"
+	implementation "net.fabricmc:fabric-loader:${property('deps.fabric_loader')}"
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
-	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+	implementation "net.fabricmc.fabric-api:fabric-api:${property('deps.fabric_api')}"
 
 	// ModMenu (compile-only; loaded at runtime only when Mod Menu itself is installed)
-	compileOnly "com.terraformersmc:modmenu:${project.modmenu_version}"
+	compileOnly "com.terraformersmc:modmenu:${property('deps.modmenu')}"
 
 	// YetAnotherConfigLib (compile-only; never bundled here) - the config screen is built
 	// on its API for a matching look with Inspect Animations. Declared as a hard depends
@@ -40,33 +54,43 @@ dependencies {
 	// from Modrinth's maven (repository declared above), not from a local file.
 	// Modrinth maven artifact id equals the Modrinth project slug ("yacl"), version
 	// equals the Modrinth version number.
-	compileOnly "maven.modrinth:yacl:3.9.7+26.3-fabric"
+	compileOnly "maven.modrinth:yacl:${property('deps.yacl')}"
 
 	// Inspect Animations is a hard dependency (fabric.mod.json depends), so dev runs need it too.
-	// Drop its jar (renamed, e.g. "inspectanimations-0.2.5.jar") into the "libs" folder,
-	// then uncomment the line below and the flatDir repository above. Compiling the release
-	// never needs it (upstream is used via a reflection probe), so it MUST stay commented
-	// out - an uncommented line kills the CI build, which has no libs/ folder.
+	// Drop its jar for the target version (renamed, e.g. "inspectanimations-0.2.5.jar") into
+	// the root "libs" folder, then uncomment the line below and the flatDir repository above.
+	// Compiling the release never needs it (upstream is used via a reflection probe), so
+	// both lines MUST stay commented out - an uncommented line kills the CI build, which
+	// has no libs/ folder (it broke the v1.1.0 tag once).
 	// localRuntime "libs:inspectanimations:0.2.5"
 }
 
 processResources {
-	def version = project.version
-	inputs.property "version", version
-
-	filesMatching("fabric.mod.json") {
-		expand "version": version
+	// fabric.mod.json placeholders: ${version} is the clean mod.version; ${minecraft}
+	// is this node's declared compatibility range (e.g. ">=26.3 <26.4").
+	// project.property() instead of bare property(): inside a task scope the latter
+	// would bind to the task, not to the project's Stonecutter-backed properties.
+	def props = [
+		version  : project.property('mod.version'),
+		minecraft: project.property('mod.mc_compat'),
+	]
+	inputs.properties(props)
+	filesMatching('fabric.mod.json') {
+		expand(props)
+	}
+	// The generated per-animation tags (see tools/tags/generate.py) are kept outside
+	// the shared src/ because their content is per Minecraft version; the matching
+	// set is placed at the datapack path Inspect Animations reads our tags from.
+	into('data/inspect-animations-idle/tags/item') {
+		from rootProject.file("src/generated/tags/${sc.current.version}")
 	}
 }
 
 tasks.withType(JavaCompile).configureEach {
-	it.options.release = 25
+	it.options.release = 25  // every supported 26.x node runs on Java 25
 }
 
 java {
-	// Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-	// if it is present.
-	// If you remove this line, sources will not be generated.
 	withSourcesJar()
 
 	sourceCompatibility = JavaVersion.VERSION_25
@@ -74,27 +98,20 @@ java {
 }
 
 jar {
-	def projectName = project.name
-	inputs.property "projectName", projectName
-
-	from("LICENSE") {
-		rename { "${it}_$projectName"}
+	from(rootProject.file('LICENSE')) {
+		rename { "${it}_${project.base.archivesName.get()}" }
 	}
 }
 
-// configure the maven publication
-publishing {
-	publications {
-		create("mavenJava", MavenPublication) {
-			from components.java
-		}
-	}
-
-	// See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-	repositories {
-		// Add repositories to publish to here.
-		// Notice: This block does NOT have the same function as the block in the top level.
-		// The repositories here will be used for publishing your artifact, not for
-		// retrieving dependencies.
-	}
+// Copies this node's release artifacts to build/libs/<mod version>, one folder
+// holding the jars of every supported version together. The root `buildAll`
+// task (registered in stonecutter.gradle) aggregates this across the nodes.
+tasks.register('buildAndCollect', Copy) {
+	group = 'build'
+	description = 'Builds the mod jar for this Minecraft version and copies it into the release folder.'
+	inputs.property('mod.version', project.property('mod.version'))
+	from tasks.named('jar').flatMap { it.archiveFile }
+	// sources jar is optional, kept out of game installs (see AGENTS.md)
+	from tasks.named('sourcesJar').flatMap { it.archiveFile }
+	into rootProject.layout.buildDirectory.dir("libs/${project.property('mod.version')}")
 }
