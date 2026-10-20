@@ -7,6 +7,52 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- Regeneration tooling for the item tags: `tools/tags/generate.py` writes all four
+  per-animation tags (`turn`, `toss`, `flip`, `flourish`) from any vanilla jar (default:
+  the one Loom already has cached, otherwise downloaded from Mojang). The curated
+  assignments live in the script's `FLIP`/`FLOURISH` lists and accept `#` tag references,
+  which the script expands through vanilla data - so curated tags stay valid across
+  Minecraft updates. `toss` lists every block that exists as an item; `turn` covers the
+  rest of the item registry (minus the curated ones). The registry dump is fetched from
+  misode/mcmeta (`<version>-registries`). Run it after every Minecraft version bump;
+  `--check` verifies the committed files match the script.
+- Per-trigger switches: every inactivity reset source can now be turned off individually
+  in the config screen. Defaults: all six action triggers (slot switching, item use,
+  attack presses and held attacks, offhand swap, held-item replacement) are on - they only
+  fire on real player activity; the state triggers default to off so existing users see
+  no new resets.
+- New inactivity triggers (freely combinable; the state ones default to off):
+  - replacing the item held in the selected hotbar slot or the offhand slot (any pickup,
+    placement, drop or inventory click that changes the held stack);
+  - sprinting, walking/moving, sneaking;
+  - camera yaw turns beyond a configurable per-tick threshold (default 15°/tick);
+  - creative/spectator flight and elytra gliding.
+  State triggers are sampled once every 4 ticks to keep the per-tick cost minimal;
+  very short stints (shorter than 4 ticks) may miss a reset by design.
+- Two-tier timing: a *first* timeout charged after any activity, and a *subsequent* timeout
+  charged after each fired auto-animation. Both are 1-120 s sliders, independent.
+- Defaults retuned: 20 s first / 10 s subsequent timeouts (was one shared 16 s), and all
+  six action triggers default to on; the state triggers stay off by default.
+- Per-parameter "reset to default" button next to every setting in the config screen.
+- Rebuilt Mod Menu config screen with **YetAnotherConfigLib** - the same config library and
+  visual style Inspect Animations builds its own menu on: two tabs (basics + an
+  "Experimental functions" tab for the triggers), scrollable option list, a description
+  under every setting's name, and YACL's built-in per-option reset buttons. YACL is
+  compile-only, never bundled, and declared as a hard dependency in `fabric.mod.json`.
+
+### Changed
+
+- Config file: `idleSeconds` is migrated to `firstSeconds`; `nextSeconds`, `headTurnDegrees`
+  and the twelve `reset*` switches were added (missing keys fall back to defaults, so
+  1.0.x configs load unchanged and stay editable by hand).
+- In-game behaviour when menus/pause screens are open is unchanged: the timer keeps running,
+  triggers are skipped; state triggers do not react to menu activity.
+- AGENTS.md: architecture, tick budget and trigger model updated for 1.1.0; agent-hygiene
+  rules added (explicit working directories for scratch commands, `git restore` over
+  re-creation, changelog placement under `[Unreleased]`).
+
 ## [1.0.2] - 2026-10-20
 
 ### Added
@@ -47,6 +93,7 @@ silently running without the idle feature. Unsupported versions are rejected at 
   - for per-animation item tagging in the Inspect Animations config.
 - Mod Menu integration (optional dependency).
 
-[Unreleased]: https://github.com/a-karetka/inspect-animations-idle/compare/v1.0.1...HEAD
+[Unreleased]: https://github.com/a-karetka/inspect-animations-idle/compare/v1.0.2...HEAD
+[1.0.2]: https://github.com/a-karetka/inspect-animations-idle/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/a-karetka/inspect-animations-idle/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/a-karetka/inspect-animations-idle/releases/tag/v1.0.0

@@ -4,25 +4,23 @@ English | [Русский](README.ru.md)
 
 [![Build](https://github.com/a-karetka/inspect-animations-idle/actions/workflows/build.yml/badge.svg)](https://github.com/a-karetka/inspect-animations-idle/actions/workflows/build.yml)
 
-A client-side Fabric mod for Minecraft 26.3 that expands [Inspect Animations](https://modrinth.com/mod/inspect-animations) with **idle auto-animations**: if you do nothing for a configurable amount of time, the mod automatically plays one of the Inspect Animations actions at random - either the currently selected animation (the same thing that happens when you press **R**) or the **Turn** animation.
+A client-side Fabric mod for Minecraft 26.3 that expands [Inspect Animations](https://modrinth.com/mod/inspect-animations) with **idle auto-animations**: stay idle for a set amount of time, and the mod automatically plays one of the Inspect Animations actions - your currently selected animation (like pressing **R**) or the **Turn** animation.
 
-Inactivity is reset by any of the following player actions:
+Ordinary actions - using items, switching items, replacing the held item - reset the timer, so animations play only while you are actually doing nothing. Both timeouts, that list of actions and a few optional ones are adjustable.
 
-- Using an item (**left click** or **right click**)
-- Switching items (**hotbar keys 1-9**, **mouse wheel**, **offhand swap** with F)
+## Settings
 
-Everything is configurable from the Mod Menu config screen: the feature can be toggled and the idle timeout can be changed (1-180 seconds). The setting is stored in `config/inspect-animations-idle.json`.
+The mod can be configured through **Mod Menu**.
 
 ## Requirements
 
-- [Inspect Animations](https://modrinth.com/mod/inspect-animations) by **[SoundsoftheSun](https://codeberg.org/SoundsoftheSun/inspect-animations)** - a **required dependency**, the mod will not load without it. Supported versions: **0.2.5 and any later 0.2.x** (`^0.2.5`); on an unsupported version the game refuses to start with a clear loader message about the version mismatch.
-- [Mod Menu](https://modrinth.com/mod/modmenu) by **TerraformersMC** (optional) - used only to expose the config screen.
+- [Inspect Animations](https://modrinth.com/mod/inspect-animations) by **SoundsoftheSun** - **required**.
+- [YetAnotherConfigLib](https://modrinth.com/mod/yacl) - **required**.
+- [Mod Menu](https://modrinth.com/mod/modmenu) - optional (the config screen exists only with Mod Menu installed).
 
-This mod integrates with Inspect Animations via a fail-safe runtime probe: if the version installed does not provide the expected methods, the mod disables itself and logs a warning instead of crashing.
+## Custom animations via item tags
 
-## Item tags
-
-The mod also ships four item tags - one per Inspect Animations animation - so items can be assigned an animation by simply tagging them:
+The mod adds four item tags - one per Inspect Animations animation. Items placed into a tag play that animation on inspection, including the idle auto-animations:
 
 | Tag | Animation |
 | --- | --- |
@@ -31,11 +29,6 @@ The mod also ships four item tags - one per Inspect Animations animation - so it
 | `inspect-animations-idle:flip` | Flip |
 | `inspect-animations-idle:flourish` | Flourish |
 
-To use them, open the Inspect Animations config (**Animations for specific items**) and add the tag for the animation you want, prefixed with `#`:
+## Downloading
 
-- Turn: `#inspect-animations-idle:turn`
-- Toss: `#inspect-animations-idle:toss`
-- Flip: `#inspect-animations-idle:flip`
-- Flourish: `#inspect-animations-idle:flourish`
-
-Every item you add to a tag file plays that animation when inspected - including the idle auto-animations triggered by this mod. Tag files can contain plain item IDs (`minecraft:diamond_sword`) or references to other tags prefixed with `#` (for example `#minecraft:swords`).
+Grab the latest jar from the [GitHub Releases](https://github.com/a-karetka/inspect-animations-idle/releases) or from [Modrinth](https://modrinth.com/mod/inspect-animations-idle) and drop it into your `mods` folder along with its dependencies.

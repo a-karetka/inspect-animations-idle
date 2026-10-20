@@ -35,8 +35,24 @@ public final class IdleInspector {
 	private static final int SUPPORTED_MIN_PATCH = 5;
 	private static final String SUPPORTED_VERSION_RANGE = ">=0.2.5, <0.3.0";
 
+	/**
+	 * Armory slot indices in the player inventory container: the hotbar slots that funnel through
+	 * {@code Inventory#setSelectedSlot} are 0-8 and the offhand container slot is 40 (the slots above
+	 * belong to armor and must not count as "item in hand changed" activity).
+	 */
+	private static final int OFFHAND_SLOT = 40;
+
 	/** Idle counter in client ticks; the timer restarts after every auto-trigger. */
 	private static int idleTicks;
+	/**
+	 * Window currently charged, in ticks: always one of the two precomputed config windows.
+	 * Kept as a plain field copied on mode switch - the per-tick compare must not pay for
+	 * any "which window applies" branching. Initialized from the config default so the very
+	 * first tick after class load compares against the first window, not zero.
+	 */
+	private static int windowTicks = IdleConfig.firstIntervalTicks;
+	/** Which of the two windows is charged; flips on trigger and activity resets. */
+	private static boolean firstWindowCharged = true;
 	/** Set once the reflection probe has run; the trigger path must not repeat it. */
 	private static boolean resolved;
 	/** Fail-safe latch: any integration failure switches the feature off permanently. */
@@ -57,28 +73,95 @@ public final class IdleInspector {
 	}
 
 	/**
-	 * Called from mixins on item use and item switching; the whole hook is one int store,
-	 * which is what makes the mixins effectively free.
+	 * Arms the timeout for a fresh activity streak: counter to zero and the *first* window
+	 * charged, per the agreed semantics "any activity restarts the initial timeout; only an
+	 * actually fired auto-trigger charges the subsequent window".
 	 */
-	public static void onActivity() {
+	private static void armFirstWindow() {
 		idleTicks = 0;
+		windowTicks = IdleConfig.firstIntervalTicks;
+		firstWindowCharged = true;
+	}
+
+	/**
+	 * Live config edits must reach the currently charged window without an activity reset:
+	 * before 1.1.0 the tick path read the config field directly, so a mid-streak slider change
+	 * applied immediately. Keeping the charged copy without this hook would freeze the pending
+	 * timeout at its old value until the next reset, a needless behaviour regression.
+	 */
+	public static void onFirstWindowConfigChanged(int newFirstTicks) {
+		if (firstWindowCharged) windowTicks = newFirstTicks;
+	}
+
+	/** Same contract as {@link #onFirstWindowConfigChanged(int)} for the subsequent window. */
+	public static void onNextWindowConfigChanged(int newNextTicks) {
+		if (!firstWindowCharged) windowTicks = newNextTicks;
+	}
+
+	// ── Activity entry points. Each is one config-flag read plus a reset at most, which is
+	// what keeps the mixins effectively free; sources are split into named methods so each
+	// mixin reads only the flag of the trigger that calls it.
+
+	/** Slot switch: hotbar keys 1-9, mouse wheel, programmatic selection ({@code Inventory#setSelectedSlot}). */
+	public static void onSlotSwitch() {
+		if (IdleConfig.resetSlotSwitch) armFirstWindow();
+	}
+
+	/** Right-click item use ({@code Minecraft#startUseItem}, re-invoked every held tick). */
+	public static void onItemUse() {
+		if (IdleConfig.resetItemUse) armFirstWindow();
+	}
+
+	/** Left-click attack press ({@code Minecraft#startAttack}). */
+	public static void onAttack() {
+		if (IdleConfig.resetAttack) armFirstWindow();
+	}
+
+	/** Held left click / block breaking ({@code Minecraft#continueAttack}). */
+	public static void onAttackHold() {
+		if (IdleConfig.resetAttackHold) armFirstWindow();
+	}
+
+	/**
+	 * Item replaced: the stack in the selected hotbar slot or the offhand slot changed
+	 * (pickup, placement, drop, any inventory click). Called from {@code Inventory#setItem},
+	 * so the caller has already done the slot filtering.
+	 */
+	public static void onItemReplace() {
+		if (IdleConfig.resetItemReplace) armFirstWindow();
 	}
 
 	private static void tick(Minecraft minecraft) {
-		// Cheapest possible tick path: static flag read, counter increment, comparison.
+		// Cheapest possible tick path: static flag read, counter increment, comparisons.
 		// Disabling resets the counter so that re-enabling starts a fresh window.
+		//
+		// Invariant note (1.1.0): the per-tick budget was deliberately widened. Each state
+		// trigger below is its own config flag so a disabled trigger costs exactly one
+		// boolean field read; enabled state triggers are sampled once every
+		// IdleConfig.STATE_CHECK_MASK ticks via the already-incremented counter, which caps
+		// their worst-case cost at (checks / 4) primitive compares per tick. No allocations
+		// remain - the head-turn check uses the vanilla yRot/yRotO tick pair, no extra
+		// per-tick state is cached.
 		if (!IdleConfig.enabled) {
 			idleTicks = 0;
+			windowTicks = IdleConfig.firstIntervalTicks;
+			firstWindowCharged = true;
 			return;
 		}
 		// Offhand swap (F) also switches the held item but never passes through
 		// Inventory#setSelectedSlot, which the mixins already cover.
 		// A key press leaves the mapping "down" only while the game is in-game (no screen open),
 		// so this produces no false activity from GUIs or the title screen.
-		if (minecraft.options.keySwapOffhand.isDown()) idleTicks = 0;
-		if (++idleTicks < IdleConfig.intervalTicks) return;
+		if (IdleConfig.resetOffhandSwap && minecraft.options.keySwapOffhand.isDown()) armFirstWindow();
+		if (++idleTicks < windowTicks) {
+			// State triggers (movement, camera, flights) are conditions, not events - the
+			// only way to react cheaply is sampling. Gated behind their flags and periodic,
+			// so a fully disabled config pays nothing beyond the mask test.
+			if ((idleTicks & IdleConfig.STATE_CHECK_MASK) == 0) checkStateTriggers(minecraft);
+			return;
+		}
 		// Reset first so a failing invocation below can never cause a cascade of triggers.
-		idleTicks = 0;
+		armFirstWindow();
 		// Triggers are skipped in menus and while the game is paused; the counter itself
 		// keeps running intentionally, per the agreed behaviour.
 		if (minecraft.player == null || minecraft.level == null || minecraft.isPaused()) return;
@@ -86,12 +169,51 @@ public final class IdleInspector {
 		if (disabled) return;
 		Method method = pickAction();
 		if (method == null) return;
+		// Only an actually fired trigger charges the subsequent window.
+		windowTicks = IdleConfig.nextIntervalTicks;
+		firstWindowCharged = false;
 		try {
 			if (method == sendTurnAnimation) method.invoke(null, minecraft.player, turnAnimation);
 			else method.invoke(null, minecraft.player);
 		} catch (Throwable t) {
 			disable("Inspect Animations invocation failed", t);
 		}
+	}
+
+	/**
+	 * State-trigger sampling, executed once every {@code STATE_CHECK_MASK + 1} ticks.
+	 *
+	 * <p>Ordered from cheapest to most expensive, guarded by the trigger flags, and bailed
+	 * out before any virtual call while no player exists (title screen, disconnects, world
+	 * transitions). Uses only vanilla field reads: input keystroke record, abilities flag,
+	 * fall-flying check and the yaw tick pair the engine already maintains.
+	 */
+	private static void checkStateTriggers(Minecraft minecraft) {
+		LocalPlayer player = minecraft.player;
+		if (player == null || minecraft.level == null) return;
+		if (IdleConfig.resetSprint && player.isSprinting()) {
+			armFirstWindow();
+			return;
+		}
+		if (IdleConfig.resetWalk && (player.input.keyPresses.forward() || player.input.keyPresses.backward()
+				|| player.input.keyPresses.left() || player.input.keyPresses.right())) {
+			armFirstWindow();
+			return;
+		}
+		if (IdleConfig.resetCrouch && player.isCrouching()) {
+			armFirstWindow();
+			return;
+		}
+		if (IdleConfig.resetHeadTurn) {
+			float turn = player.getYRot() - player.yRotO;
+			if (turn < 0.0F) turn = -turn;
+			if (turn >= IdleConfig.headTurnDegrees) armFirstWindow();
+		}
+		if (IdleConfig.resetCreativeFly && player.getAbilities().flying) {
+			armFirstWindow();
+			return;
+		}
+		if (IdleConfig.resetElytraFly && player.isFallFlying()) armFirstWindow();
 	}
 
 	/** Pure random pick among the available actions; falls back to whichever one exists. */

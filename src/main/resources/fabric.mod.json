@@ -44,7 +44,8 @@
 		"minecraft": "~26.3",
 		"java": ">=25",
 		"fabric-api": "*",
-		"inspectanimations": "[0.2.5,0.3.0)"
+		"yet_another_config_lib_v3": "*",
+		"inspectanimations": ">=0.2.5 <0.3.0"
 	},
 	"suggests": {
 		"modmenu": "*"
