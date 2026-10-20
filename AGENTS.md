@@ -245,11 +245,16 @@ Write every new piece of code with that in mind, not just existing files.
    enforces this, but check locally too: `git grep -nE '^\s*(localRuntime|compileOnly)\s+"libs:' build.gradle`
    must find nothing (comments start with `//` and never match the pattern).
 3. Commit, `git tag -a vX.Y.Z`, push with tags.
-4. CI publishes all per-version jars to the GitHub Release automatically. Upload them to
-   Modrinth manually: per-version upload entries `X.Y.Z` loader Fabric, one per game
-   version set - 26.1/26.1.1/26.1.2 for the `+26.1.2` jar, 26.2 for `+26.2`, 26.3 for
-   `+26.3`; dependencies per file: Inspect Animations (required), YetAnotherConfigLib
-   (required), Mod Menu (optional). Fabric API is pulled in by Inspect Animations itself
+4. CI publishes all per-version jars to the GitHub Release automatically, then creates
+   one Modrinth version per game-version set (Kira-NT/mc-publish, needs the
+   `MODRINTH_TOKEN` repo secret once: PAT with the `CREATE_VERSION` scope). Each entry
+   is named `<ver>-fabric+<mc>` like upstream's own: `+26.1.2` carries game versions
+   26.1/26.1.1/26.1.2, `+26.2` - 26.2, `+26.3` - 26.3; dependencies per entry:
+   Inspect Animations (required), YetAnotherConfigLib (required), Mod Menu (optional).
+   After the release run, verify on Modrinth: three listed versions with the right game
+   versions, each with the correct jar and dependency links. Manual fallback: upload the
+   three jars by hand on the release page (the 1.2.0 release was published this way
+   before the automation existed). Fabric API is pulled in by Inspect Animations itself
    - since 1.2.0 this mod neither uses nor declares it.
 5. Verify in CI logs that mixins applied and no module failed for any version
    (grep the logs for injection failures).

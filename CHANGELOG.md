@@ -17,7 +17,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Dependency versions, MC compatibility ranges and the version set now live in
   `stonecutter.properties.toml` (one section per game version); adding a future
   Minecraft version is a config entry plus a tag regeneration.
-- CI builds every supported version and publishes all per-version jars to the release.
+- CI builds every supported version and publishes all per-version jars to the release,
+  then creates one Modrinth version per game-version set (`<version>-fabric+<mc>` names,
+  linked dependencies) - releasing to Modrinth is a tag push away, no manual uploads.
 
 ### Changed
 

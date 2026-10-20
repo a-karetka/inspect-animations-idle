@@ -1,7 +1,8 @@
 # Builds the mod on pull requests, and on version tags (v*) builds and publishes
-# the per-version jars as a GitHub Release. Version numbering: `mod.version` in
-# stonecutter.properties.toml must match the pushed tag (without the "v" prefix)
-# - the workflow enforces this.
+# the per-version jars as a GitHub Release, then creates one Modrinth version per
+# game-version set (Kira-NT/mc-publish; needs the MODRINTH_TOKEN repo secret).
+# Version numbering: `mod.version` in stonecutter.properties.toml must match the
+# pushed tag (without the "v" prefix) - the workflow enforces this.
 name: Build
 
 on:
@@ -52,16 +53,18 @@ jobs:
 
       # Release tags must agree with the mod version in stonecutter.properties.toml,
       # otherwise the release would carry jars versioned differently from its tag.
+      # Also exported for the publishing steps below (Modrinth version numbers).
       - name: Verify tag matches mod version
         if: startsWith(github.ref, 'refs/tags/v')
+        id: tagcheck
         run: |
-          TAG="${GITHUB_REF_NAME#v}"
-          VERSION="$(sed -n 's/^mod.version *= *"\(.*\)"/\1/p' stonecutter.properties.toml)"
-          if [ "$TAG" != "$VERSION" ]; then
-            echo "Tag 'v$TAG' does not match 'mod.version = \"$VERSION\"' in stonecutter.properties.toml"
+          MOD_VERSION="$(sed -n 's/^mod.version *= *"\(.*\)"/\1/p' stonecutter.properties.toml)"
+          if [ "${GITHUB_REF_NAME#v}" != "$MOD_VERSION" ]; then
+            echo "Tag '$GITHUB_REF_NAME' does not match 'mod.version = \"$MOD_VERSION\"' in stonecutter.properties.toml"
             echo "Tip: bump the version, or move the tag, then push it again."
             exit 1
           fi
+          echo "version=$MOD_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build all versions
         run: ./gradlew buildAll --no-configuration-cache
@@ -144,3 +147,68 @@ jobs:
             echo "dev-only -sources jars must not be published to releases"
             exit 1
           fi
+
+      # Modrinth: one version entry per game-version set, each with its own jar - game
+      # versions attach to the whole entry, so the three jars cannot share one entry.
+      # Entry numbers/name mirror Inspect Animations' own "<ver>-fabric+<mc>" scheme.
+      # Dependencies are project-level links: the >=0.2.5 <0.3.0 range stays in our
+      # jar metadata, while Modrinth shows the linked project (survives upstream's
+      # 0.2.x updates without a re-link).
+      - name: Publish to Modrinth (26.1 patch line)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: Kira-NT/mc-publish@v3
+        with:
+          modrinth-id: inspect-animations-idle
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: build/release-jars/*+26.1.2.jar
+          name: Inspect Animations Idle ${{ steps.tagcheck.outputs.version }} Fabric 26.1
+          version: ${{ steps.tagcheck.outputs.version }}-fabric+26.1.2
+          version-type: release
+          changelog-file: release_body.md
+          loaders: fabric
+          game-versions: |
+            26.1
+            26.1.1
+            26.1.2
+          dependencies: |
+            inspect-animations(required)
+            yacl(required)
+            modmenu(optional)
+
+      - name: Publish to Modrinth (26.2)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: Kira-NT/mc-publish@v3
+        with:
+          modrinth-id: inspect-animations-idle
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: build/release-jars/*+26.2.jar
+          name: Inspect Animations Idle ${{ steps.tagcheck.outputs.version }} Fabric 26.2
+          version: ${{ steps.tagcheck.outputs.version }}-fabric+26.2
+          version-type: release
+          changelog-file: release_body.md
+          loaders: fabric
+          game-versions: |
+            26.2
+          dependencies: |
+            inspect-animations(required)
+            yacl(required)
+            modmenu(optional)
+
+      - name: Publish to Modrinth (26.3)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: Kira-NT/mc-publish@v3
+        with:
+          modrinth-id: inspect-animations-idle
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          files: build/release-jars/*+26.3.jar
+          name: Inspect Animations Idle ${{ steps.tagcheck.outputs.version }} Fabric 26.3
+          version: ${{ steps.tagcheck.outputs.version }}-fabric+26.3
+          version-type: release
+          changelog-file: release_body.md
+          loaders: fabric
+          game-versions: |
+            26.3
+          dependencies: |
+            inspect-animations(required)
+            yacl(required)
+            modmenu(optional)
