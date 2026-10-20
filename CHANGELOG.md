@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.2] - 2026-10-20
+
+### Added
+
+- AGENTS.md.
+
+### Changed
+
+- Fixed the publishing of JAR files to GitHub.
+- Icon size reduced.
+- Fixed the version check for Inspect Animations.
+
 ## [1.0.1] - 2026-10-19
 
 ### Changed
