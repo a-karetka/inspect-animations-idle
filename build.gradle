@@ -5,8 +5,11 @@ plugins {
 
 repositories {
 	maven { url 'https://maven.terraformersmc.com/releases/' }
+	// YACL (the config screen API) resolves from Modrinth's maven below, so neither CI
+	// nor a fresh checkout needs any pre-downloaded jar for `./gradlew build` to pass.
+	maven { url 'https://api.modrinth.com/maven' }
 	// Uncomment for dev runs with a locally downloaded Inspect Animations jar:
-	flatDir { dirs 'libs' }
+	// flatDir { dirs 'libs' }
 }
 
 loom {
@@ -33,13 +36,18 @@ dependencies {
 
 	// YetAnotherConfigLib (compile-only; never bundled here) - the config screen is built
 	// on its API for a matching look with Inspect Animations. Declared as a hard depends
-	// in fabric.mod.json; Inspect Animations (hard depends) requires it too.
-	compileOnly "libs:yet_another_config_lib_v3:3.9.7+26.3-fabric"
+	// in fabric.mod.json; Inspect Animations (hard depends) requires it too. Resolved
+	// from Modrinth's maven (repository declared above), not from a local file.
+	// Modrinth maven artifact id equals the Modrinth project slug ("yacl"), version
+	// equals the Modrinth version number.
+	compileOnly "maven.modrinth:yacl:3.9.7+26.3-fabric"
 
 	// Inspect Animations is a hard dependency (fabric.mod.json depends), so dev runs need it too.
 	// Drop its jar (renamed, e.g. "inspectanimations-0.2.5.jar") into the "libs" folder,
-	// then uncomment the line below and the flatDir repository above:
-	localRuntime "libs:inspectanimations:0.2.5"
+	// then uncomment the line below and the flatDir repository above. Compiling the release
+	// never needs it (upstream is used via a reflection probe), so it MUST stay commented
+	// out - an uncommented line kills the CI build, which has no libs/ folder.
+	// localRuntime "libs:inspectanimations:0.2.5"
 }
 
 processResources {

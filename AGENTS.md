@@ -176,6 +176,10 @@ Write every new piece of code with that in mind, not just existing files.
    `Unreleased` changelog notes under a dated `## [x.y.z]` section (the only legitimate moment
    for that move) and add the matching compare link line below the file.
 2. `./gradlew build` (keep the `-sources` jar out of game installs).
+   Before tagging, verify the dev-only lines are commented out — the CI checkout has no
+   local `libs/` folder, and an uncommented `localRuntime "libs:inspectanimations:…"` /
+   `compileOnly "libs:…"` kills the build there (this broke the v1.1.0 tag once):
+   `git grep -n 'libs:' build.gradle` must match comments only.
 3. Commit, `git tag -a vX.Y.Z`, push with tags.
 4. CI publishes the jars to the GitHub Release automatically. Upload the same jar to
    Modrinth manually: version number `X.Y.Z`, loader Fabric, game versions 26.3,
